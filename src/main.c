@@ -16,23 +16,6 @@
 #define IMAGE_WIDTH 2000  // for m
 #define OUTPUT_DIR "pics"
 
-static bool ensure_output_dir(void)
-{
-  struct stat st = {0};
-  if (stat(OUTPUT_DIR, &st) == -1) {
-#ifdef _WIN32
-    if (mkdir(OUTPUT_DIR) != 0) {
-#else
-    if (mkdir(OUTPUT_DIR, 0755) != 0) {
-#endif
-      perror("Failed to create output directory");
-      return false;
-    }
-    printf("Created output directory: %s\n", OUTPUT_DIR);
-  }
-  return true;
-}
-
 static bool stb_rgb_save_to_jpg(char *filename,
                                 int height,
                                 int width,
@@ -264,11 +247,6 @@ bool draw_heatmap_from_values(int height, int width, double **value_array, const
   if (height <= 0 || width <= 0 || !value_array)
     return false;
 
-  if (!ensure_output_dir()) {
-    perror("Problem in output directory for pics\n");
-    return false;
-  }
-
   // (1) Calculate min, max, and range
   // We can now access elements using 2D syntax: value_array[row][col]
   double value_min = value_array[0][0];
@@ -325,11 +303,6 @@ bool draw_heatmap_from_values(int height, int width, double **value_array, const
 static bool generate_butterfly(bool create_image, double *duration)
 {
 
-  if (!ensure_output_dir()) {
-    perror("Problem in output directory for pics\n");
-    return false;
-  }
-
   // (1) Start duration measurement
 
   struct timespec start = {0}, end = {0};
@@ -363,7 +336,7 @@ static bool generate_butterfly(bool create_image, double *duration)
   const int num_cores = omp_get_num_procs();
   printf("\nNumber of cores on this system: %d\n", num_cores);
 
-  printf("\nPopulating RGB arrays...\n");
+  printf("\nParallel populating of RGB arrays...\n");
 
   int chunk_size = IMAGE_HEIGHT / (4 * num_cores);
   if (chunk_size < 1) {
@@ -429,38 +402,10 @@ static bool generate_butterfly(bool create_image, double *duration)
   return true;
 }
 
-static bool generate_butterfly_and_heatmaps(void)
+static bool generate_heatmaps(void)
 {
 
-  if (!ensure_output_dir()) {
-    perror("Problem in output directory for pics\n");
-    return false;
-  }
-
-  // (1) Allocate RGB arrays
-
-  uint8_t **r_array = alloc_2d_int_array(IMAGE_HEIGHT, IMAGE_WIDTH);
-  if (r_array == NULL) {
-    perror("Problem in malloc of r_array");
-    return false;
-  }
-
-  uint8_t **g_array = alloc_2d_int_array(IMAGE_HEIGHT, IMAGE_WIDTH);
-  if (g_array == NULL) {
-    perror("Problem in malloc of g_array");
-    free_2d_int_array(r_array, IMAGE_HEIGHT);
-    return false;
-  }
-
-  uint8_t **b_array = alloc_2d_int_array(IMAGE_HEIGHT, IMAGE_WIDTH);
-  if (b_array == NULL) {
-    perror("Problem in malloc of b_array");
-    free_2d_int_array(r_array, IMAGE_HEIGHT);
-    free_2d_int_array(g_array, IMAGE_HEIGHT);
-    return false;
-  }
-
-  // (2) Allocate heatmaps array
+  // (1) Allocate heatmaps array
 
   double **C_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
   if (C_values == NULL) {
@@ -534,12 +479,12 @@ static bool generate_butterfly_and_heatmaps(void)
     return false;
   }
 
-  // (3) Populate arrays
+  // (2) Populate arrays
 
   const int num_cores = omp_get_num_procs();
   printf("\nNumber of cores on this system: %d\n", num_cores);
 
-  printf("\nCalculating...\n");
+  printf("\nParallel calculations...\n");
 
   int chunk_size = IMAGE_HEIGHT / (4 * num_cores);
   if (chunk_size < 1) {
@@ -576,9 +521,6 @@ static bool generate_butterfly_and_heatmaps(void)
       H0_values[n - 1][m - 1] = Hxy[0];
       H1_values[n - 1][m - 1] = Hxy[1];
       H2_values[n - 1][m - 1] = Hxy[2];
-      r_array[n - 1][m - 1] = F(Hxy[0]);
-      g_array[n - 1][m - 1] = F(Hxy[1]);
-      b_array[n - 1][m - 1] = F(Hxy[2]);
 
       if ((m == 1) && ((n == 1) || ((n % 100) == 0))) {
         printf("n = %d / %d\n", n, IMAGE_HEIGHT);
@@ -587,15 +529,7 @@ static bool generate_butterfly_and_heatmaps(void)
     }
   }
 
-  // (4) Create butterfly image
-
-  printf("\nCreating butterfly image...\n");
-  if (!stb_rgb_save_to_jpg(OUTPUT_DIR "/output-butterfly.jpg", IMAGE_HEIGHT, IMAGE_WIDTH, r_array, g_array, b_array)) {
-    perror("Problem in butterfly image generation\n");
-    return false;
-  }
-
-  // (5) Create heatmaps
+  // (3) Create heatmaps
 
   printf("\n");
 
@@ -671,14 +605,7 @@ static bool generate_butterfly_and_heatmaps(void)
     return false;
   }
 
-  // (6) Free memory allocated to RGB arrays
-
-  printf("\nFreeing memory allocated to RGB arrays...\n");
-  free_2d_int_array(r_array, IMAGE_HEIGHT);
-  free_2d_int_array(g_array, IMAGE_HEIGHT);
-  free_2d_int_array(b_array, IMAGE_HEIGHT);
-
-  // (7) Free memory allocated to heatmaps
+  // (4) Free memory allocated to heatmaps
 
   printf("\nFreeing memory allocated to heatmaps...\n");
   free_2d_double_array(C_values, IMAGE_HEIGHT);
@@ -697,7 +624,7 @@ static bool generate_butterfly_and_heatmaps(void)
   return true;
 }
 
-bool butterfly(void)
+bool run_butterfly(void)
 {
   const int NB_RUNS = 1;
   const bool REQUEST_IMAGE = true;
@@ -728,15 +655,47 @@ bool butterfly(void)
 
 int main(void)
 {
-  // bool res = butterfly();
-  bool res = generate_butterfly_and_heatmaps();
 
-  if (res) {
-    return EXIT_SUCCESS;
-  } else {
-    perror("Problem in running butterfly or heatmap\n");
+  // (1) ensure output directory
+
+  struct stat st = {0};
+  if (stat(OUTPUT_DIR, &st) == -1) {
+#ifdef _WIN32
+    if (mkdir(OUTPUT_DIR) != 0) {
+#else
+    if (mkdir(OUTPUT_DIR, 0755) != 0) {
+#endif
+      perror("Failed to create output directory");
+      return EXIT_FAILURE;
+    }
+    printf("Created output directory: %s\n", OUTPUT_DIR);
+  }
+
+  // (2) Generate butterfly
+
+  printf("\n(1) GENERATE BUTTERFLY\n");
+  printf("----------------------\n");
+
+  if (!run_butterfly()) {
+    perror("Problem in generating butterfly\n");
     return EXIT_FAILURE;
   }
+
+  // (3) Generate heatmaps
+
+  printf("\n(2) GENERATE HEATMAPS\n");
+  printf("---------------------\n");
+
+  if (!generate_heatmaps()) {
+    perror("Problem in generating heatmaps\n");
+    return EXIT_FAILURE;
+  }
+
+  // (4) Done
+
+  printf("\nDone.\n");
+
+  return EXIT_SUCCESS;
 }
 
 // end
