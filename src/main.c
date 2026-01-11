@@ -33,16 +33,13 @@ static bool ensure_output_dir(void)
   return true;
 }
 
-static bool stb_save_to_jpg(int height,
-                            int width,
-                            uint8_t **r_array,
-                            uint8_t **g_array,
-                            uint8_t **b_array)
+static bool stb_rgb_save_to_jpg(char *filename,
+                                int height,
+                                int width,
+                                uint8_t **r_array,
+                                uint8_t **g_array,
+                                uint8_t **b_array)
 {
-  if (!ensure_output_dir()) {
-    perror("Problem in output directory for pics\n");
-    return false;
-  }
 
   const int channels = 3;
   uint8_t *rgb = malloc(width * height * channels);
@@ -70,7 +67,7 @@ static bool stb_save_to_jpg(int height,
   //                width * channels);
 
   const int quality = 90;
-  stbi_write_jpg(OUTPUT_DIR "/output-butterfly.jpg",
+  stbi_write_jpg(filename,
                  width,
                  height,
                  channels,
@@ -316,8 +313,9 @@ bool draw_heatmap_from_values(int height, int width, double **value_array, const
     }
   }
 
-  // (3) Export to PNG
-  stbi_write_png(export_file, width, height, 3, rgb_image, width * 3);
+  // (3) Export to JPG
+  const int quality = 90;
+  stbi_write_jpg(export_file, width, height, 3, rgb_image, quality);
 
   free(rgb_image);
 
@@ -326,6 +324,12 @@ bool draw_heatmap_from_values(int height, int width, double **value_array, const
 
 static bool generate_butterfly(bool create_image, double *duration)
 {
+
+  if (!ensure_output_dir()) {
+    perror("Problem in output directory for pics\n");
+    return false;
+  }
+
   // (1) Start duration measurement
 
   struct timespec start = {0}, end = {0};
@@ -400,7 +404,7 @@ static bool generate_butterfly(bool create_image, double *duration)
 
   if (create_image) {
     printf("Creating image...\n");
-    if (!stb_save_to_jpg(IMAGE_HEIGHT, IMAGE_WIDTH, r_array, g_array, b_array)) {
+    if (!stb_rgb_save_to_jpg(OUTPUT_DIR "/output-butterfly.jpg", IMAGE_HEIGHT, IMAGE_WIDTH, r_array, g_array, b_array)) {
       perror("Problem in image generation\n");
       return false;
     }
@@ -427,6 +431,12 @@ static bool generate_butterfly(bool create_image, double *duration)
 
 static bool generate_butterfly_and_heatmaps(void)
 {
+
+  if (!ensure_output_dir()) {
+    perror("Problem in output directory for pics\n");
+    return false;
+  }
+
   // (1) Allocate RGB arrays
 
   uint8_t **r_array = alloc_2d_int_array(IMAGE_HEIGHT, IMAGE_WIDTH);
@@ -529,7 +539,7 @@ static bool generate_butterfly_and_heatmaps(void)
   const int num_cores = omp_get_num_procs();
   printf("\nNumber of cores on this system: %d\n", num_cores);
 
-  printf("\nPopulating RGB arrays...\n");
+  printf("\nCalculating...\n");
 
   int chunk_size = IMAGE_HEIGHT / (4 * num_cores);
   if (chunk_size < 1) {
@@ -579,8 +589,8 @@ static bool generate_butterfly_and_heatmaps(void)
 
   // (4) Create butterfly image
 
-  printf("\nCreating image...\n");
-  if (!stb_save_to_jpg(IMAGE_HEIGHT, IMAGE_WIDTH, r_array, g_array, b_array)) {
+  printf("\nCreating butterfly image...\n");
+  if (!stb_rgb_save_to_jpg(OUTPUT_DIR "/output-butterfly.jpg", IMAGE_HEIGHT, IMAGE_WIDTH, r_array, g_array, b_array)) {
     perror("Problem in butterfly image generation\n");
     return false;
   }
@@ -590,73 +600,73 @@ static bool generate_butterfly_and_heatmaps(void)
   printf("\n");
 
   printf("Generate C heatmap...\n");
-  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, C_values, OUTPUT_DIR "/C-heatmap.png")) {
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, C_values, OUTPUT_DIR "/C-heatmap.jpg")) {
     perror("Problem in draw_heatmap_from_values for C heatmap\n");
     return false;
   }
 
   printf("Generate E heatmap...\n");
-  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, E_values, OUTPUT_DIR "/E-heatmap.png")) {
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, E_values, OUTPUT_DIR "/E-heatmap.jpg")) {
     perror("Problem in draw_heatmap_from_values for E heatmap\n");
     return false;
   }
 
   printf("Generate L heatmap...\n");
-  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, L_values, OUTPUT_DIR "/L-heatmap.png")) {
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, L_values, OUTPUT_DIR "/L-heatmap.jpg")) {
     perror("Problem in draw_heatmap_from_values for L heatmap\n");
     return false;
   }
 
   printf("Generate W heatmap...\n");
-  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, W_values, OUTPUT_DIR "/W-heatmap.png")) {
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, W_values, OUTPUT_DIR "/W-heatmap.jpg")) {
     perror("Problem in draw_heatmap_from_values for W heatmap\n");
     return false;
   }
 
   printf("Generate A0 heatmap...\n");
-  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, A0_values, OUTPUT_DIR "/A0-heatmap.png")) {
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, A0_values, OUTPUT_DIR "/A0-heatmap.jpg")) {
     perror("Problem in draw_heatmap_from_values for A0 heatmap\n");
     return false;
   }
 
   printf("Generate A1 heatmap...\n");
-  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, A1_values, OUTPUT_DIR "/A1-heatmap.png")) {
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, A1_values, OUTPUT_DIR "/A1-heatmap.jpg")) {
     perror("Problem in draw_heatmap_from_values for A1 heatmap\n");
     return false;
   }
 
   printf("Generate K0 heatmap...\n");
-  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, K0_values, OUTPUT_DIR "/K0-heatmap.png")) {
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, K0_values, OUTPUT_DIR "/K0-heatmap.jpg")) {
     perror("Problem in draw_heatmap_from_values for K0 heatmap\n");
     return false;
   }
 
   printf("Generate K1 heatmap...\n");
-  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, K1_values, OUTPUT_DIR "/K1-heatmap.png")) {
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, K1_values, OUTPUT_DIR "/K1-heatmap.jpg")) {
     perror("Problem in draw_heatmap_from_values for K1 heatmap\n");
     return false;
   }
 
   printf("Generate K2 heatmap...\n");
-  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, K2_values, OUTPUT_DIR "/K2-heatmap.png")) {
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, K2_values, OUTPUT_DIR "/K2-heatmap.jpg")) {
     perror("Problem in draw_heatmap_from_values for K2 heatmap\n");
     return false;
   }
 
   printf("Generate H0 heatmap...\n");
-  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, H0_values, OUTPUT_DIR "/H0-heatmap.png")) {
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, H0_values, OUTPUT_DIR "/H0-heatmap.jpg")) {
     perror("Problem in draw_heatmap_from_values for H0 heatmap\n");
     return false;
   }
 
   printf("Generate H1 heatmap...\n");
-  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, H1_values, OUTPUT_DIR "/H1-heatmap.png")) {
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, H1_values, OUTPUT_DIR "/H1-heatmap.jpg")) {
     perror("Problem in draw_heatmap_from_values for H1 heatmap\n");
     return false;
   }
 
   printf("Generate H2 heatmap...\n");
-  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, H2_values, OUTPUT_DIR "/H2-heatmap.png")) {
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, H2_values, OUTPUT_DIR "/H2-heatmap.jpg")) {
     perror("Problem in draw_heatmap_from_values for H2 heatmap\n");
     return false;
   }
