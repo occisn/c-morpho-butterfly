@@ -5,7 +5,7 @@ Hamid Naderi Yeganeh is an artist which draws pictures with mathematical equatio
 Morpho buttterfly is one of its artworks ([X](https://www.instagram.com/p/DQmRlpliAVM/), [Instagram](https://x.com/naderi_yeganeh/status/1754107434224804305/)):
 ![original butterfly and equations](pics/original-morpho-butterfly-and-equations.jpg)
 
-The present repository reproduces the work:
+The present repository reproduces this work with C:
 ![output butterfly](pics/output-butterfly.jpg)
 
 The program uses OpenMP to parallelize calculations and [STB library](https://github.com/nothings/stb) to create the output image.
