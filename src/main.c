@@ -138,19 +138,21 @@ static inline void A(double *Axy, double x, double y, double Cxy)
   }
 }
 
-/* Calculates K(v, x,y) */
-static inline double K(uint8_t v, double x, double y)
+/* Calculates K(v,x,y) */
+static inline void K(double *Kxy, double x, double y)
 {
-  double Kvxy = 0.0;
-  for (uint8_t i = 1; i <= 60; i++) {
-    double s = i;
-    Kvxy += ((5.0 / 2.0) * ((2.0 / 25.0) + (3.0 / 50.0) * cos(s * (4.0 + 4.0 * v))) * (sin(5.0 * s) + sin(2.0 * s) + 3.0) * 0.2 * exp(-exp(-25.0 * (pow(sin(sin(2.0 * s) + (6 + sin(s * s)) * (sin(7.0 * s) * (x * 0.5) + cos(7.0 * s) * ((y - 8.0) * 0.5))), 10) * pow(sin(sin(3.0 * s) + (6 + 2 * sin(s * s)) * (sin(7.0 * s) * ((y - 8) * 0.5) - cos(7.0 * s) * (x * 0.5))), 10) - 0.1))));
+  for (uint8_t v = 0; v <= 2; v++) {
+    double Kvxy = 0.0;
+    for (uint8_t i = 1; i <= 60; i++) {
+      double s = i;
+      Kvxy += ((5.0 / 2.0) * ((2.0 / 25.0) + (3.0 / 50.0) * cos(s * (4.0 + 4.0 * v))) * (sin(5.0 * s) + sin(2.0 * s) + 3.0) * 0.2 * exp(-exp(-25.0 * (pow(sin(sin(2.0 * s) + (6 + sin(s * s)) * (sin(7.0 * s) * (x * 0.5) + cos(7.0 * s) * ((y - 8.0) * 0.5))), 10) * pow(sin(sin(3.0 * s) + (6 + 2 * sin(s * s)) * (sin(7.0 * s) * ((y - 8) * 0.5) - cos(7.0 * s) * (x * 0.5))), 10) - 0.1))));
+    }
+    Kxy[v] = Kvxy;
   }
-  return Kvxy;
 }
 
-/* Calculates H(v,x,y) knowing E(x,y), L(x,y), W(x,y), A(v,x,y) */
-static inline void H(double *Hxy, double x, double y, double Exy, double Lxy, double Wxy, const double *Axy)
+/* Calculates H(v,x,y) knowing E(x,y), L(x,y), W(x,y), A(v,x,y), K(v,x,y) */
+static inline void H(double *Hxy, double x, double y, double Exy, double Lxy, double Wxy, const double *Axy, const double *Kxy)
 {
   // const double H_part1 = Axy[0] * Axy[1] * (1.0 - Exy) * (1.0 + Lxy * (1.0 / 50.0)) * exp_minus_exp(0 + exp((2.0 * y) + (0.5 * x) + (2.0 / 5.0) - (2.0 * fabs(x - (y * 0.25)))) + exp((8.0 * y) + (2.0 * x) + (2.0 / 5.0) - fabs((8.0 * x) - (2.0 * y)))) * Wxy;
   const double H_part1 = Axy[0] * Axy[1] * (1.0 - Exy) * (1.0 + Lxy * (1.0 / 50.0)) * exp_minus_exp_minus_exp((2.0 * y) + (0.5 * x) + (2.0 / 5.0) - (2.0 * fabs(x - (y * 0.25))), (8.0 * y) + (2.0 * x) + (2.0 / 5.0) - fabs((8.0 * x) - (2.0 * y))) * Wxy;
@@ -163,7 +165,7 @@ static inline void H(double *Hxy, double x, double y, double Exy, double Lxy, do
                                               10) -
                                           (49.0 / 50.0))));
   for (uint8_t v = 0; v <= 2; v++) {
-    double Kvxy = K(v, x, y);
+    double Kvxy = Kxy[v];
     Hxy[v] = 0.0 + (((18 - (9.0 * v) + (v * v)) * (1.0 / 20.0)) * (1.0 - Axy[0]) * (1.0 - Exy) * Kvxy) + ((2 + (3.0 * v)) * 0.2) * H_part1 + H_part2 + 0.1 * Exy * ((v - 1.0) * (v - 1));
   }
 }
@@ -269,7 +271,7 @@ bool draw_heatmap_from_values(int height, int width, double **value_array, const
     perror("Problem in output directory for pics\n");
     return false;
   }
-  
+
   // (1) Calculate min, max, and range
   // We can now access elements using 2D syntax: value_array[row][col]
   double value_min = value_array[0][0];
@@ -322,7 +324,7 @@ bool draw_heatmap_from_values(int height, int width, double **value_array, const
   return true;
 }
 
-static bool calculate_butterfly(bool create_image, double *duration)
+static bool generate_butterfly(bool create_image, double *duration)
 {
   // (1) Start duration measurement
 
@@ -354,10 +356,11 @@ static bool calculate_butterfly(bool create_image, double *duration)
 
   // (3) Populate RGB arrays
 
-  printf("Populating RGB arrays...\n");
-
   const int num_cores = omp_get_num_procs();
-  printf("Number of cores on this system: %d\n", num_cores);
+  printf("\nNumber of cores on this system: %d\n", num_cores);
+
+  printf("\nPopulating RGB arrays...\n");
+
   int chunk_size = IMAGE_HEIGHT / (4 * num_cores);
   if (chunk_size < 1) {
     chunk_size = 1;
@@ -368,6 +371,7 @@ static bool calculate_butterfly(bool create_image, double *duration)
 
     double Axy[2];
     double Hxy[3];
+    double Kxy[3];
 
     for (int m = 1; m <= IMAGE_WIDTH; m++) {
 
@@ -378,7 +382,8 @@ static bool calculate_butterfly(bool create_image, double *duration)
       double Lxy = L(x, y);
       double Wxy = W(x, y, Cxy);
       A(Axy, x, y, Cxy);
-      H(Hxy, x, y, Exy, Lxy, Wxy, Axy);
+      K(Kxy, x, y);
+      H(Hxy, x, y, Exy, Lxy, Wxy, Axy, Kxy);
 
       r_array[n - 1][m - 1] = F(Hxy[0]);
       g_array[n - 1][m - 1] = F(Hxy[1]);
@@ -476,25 +481,43 @@ static bool generate_butterfly_and_heatmaps(void)
     perror("Problem in malloc for A0\n");
     return false;
   }
-  
+
   double **A1_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
   if (A1_values == NULL) {
     perror("Problem in malloc for A1\n");
     return false;
   }
-  
+
+  double **K0_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  if (K0_values == NULL) {
+    perror("Problem in malloc for K0\n");
+    return false;
+  }
+
+  double **K1_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  if (K1_values == NULL) {
+    perror("Problem in malloc for K1\n");
+    return false;
+  }
+
+  double **K2_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  if (K2_values == NULL) {
+    perror("Problem in malloc for K2\n");
+    return false;
+  }
+
   double **H0_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
   if (H0_values == NULL) {
     perror("Problem in malloc for H0\n");
     return false;
   }
-  
+
   double **H1_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
   if (H1_values == NULL) {
     perror("Problem in malloc for H1\n");
     return false;
   }
-  
+
   double **H2_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
   if (H2_values == NULL) {
     perror("Problem in malloc for H2\n");
@@ -503,10 +526,11 @@ static bool generate_butterfly_and_heatmaps(void)
 
   // (3) Populate arrays
 
+  const int num_cores = omp_get_num_procs();
+  printf("\nNumber of cores on this system: %d\n", num_cores);
+
   printf("\nPopulating RGB arrays...\n");
 
-  const int num_cores = omp_get_num_procs();
-  printf("Number of cores on this system: %d\n", num_cores);
   int chunk_size = IMAGE_HEIGHT / (4 * num_cores);
   if (chunk_size < 1) {
     chunk_size = 1;
@@ -516,6 +540,7 @@ static bool generate_butterfly_and_heatmaps(void)
   for (int n = 1; n <= IMAGE_HEIGHT; n++) {
 
     double Axy[2];
+    double Kxy[3];
     double Hxy[3];
 
     for (int m = 1; m <= IMAGE_WIDTH; m++) {
@@ -532,11 +557,15 @@ static bool generate_butterfly_and_heatmaps(void)
       W_values[n - 1][m - 1] = Wxy;
       A(Axy, x, y, Cxy);
       A0_values[n - 1][m - 1] = Axy[0];
-      A1_values[n-1][m-1] = Axy[1];
-      H(Hxy, x, y, Exy, Lxy, Wxy, Axy);
-      H0_values[n-1][m-1] = Hxy[0];
-      H1_values[n-1][m-1] = Hxy[1];
-      H2_values[n-1][m-1] = Hxy[2];
+      A1_values[n - 1][m - 1] = Axy[1];
+      K(Kxy, x, y);
+      K0_values[n - 1][m - 1] = Kxy[0];
+      K1_values[n - 1][m - 1] = Kxy[1];
+      K2_values[n - 1][m - 1] = Kxy[2];
+      H(Hxy, x, y, Exy, Lxy, Wxy, Axy, Kxy);
+      H0_values[n - 1][m - 1] = Hxy[0];
+      H1_values[n - 1][m - 1] = Hxy[1];
+      H2_values[n - 1][m - 1] = Hxy[2];
       r_array[n - 1][m - 1] = F(Hxy[0]);
       g_array[n - 1][m - 1] = F(Hxy[1]);
       b_array[n - 1][m - 1] = F(Hxy[2]);
@@ -596,6 +625,24 @@ static bool generate_butterfly_and_heatmaps(void)
     return false;
   }
 
+  printf("Generate K0 heatmap...\n");
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, K0_values, OUTPUT_DIR "/K0-heatmap.png")) {
+    perror("Problem in draw_heatmap_from_values for K0 heatmap\n");
+    return false;
+  }
+
+  printf("Generate K1 heatmap...\n");
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, K1_values, OUTPUT_DIR "/K1-heatmap.png")) {
+    perror("Problem in draw_heatmap_from_values for K1 heatmap\n");
+    return false;
+  }
+
+  printf("Generate K2 heatmap...\n");
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, K2_values, OUTPUT_DIR "/K2-heatmap.png")) {
+    perror("Problem in draw_heatmap_from_values for K2 heatmap\n");
+    return false;
+  }
+
   printf("Generate H0 heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, H0_values, OUTPUT_DIR "/H0-heatmap.png")) {
     perror("Problem in draw_heatmap_from_values for H0 heatmap\n");
@@ -630,10 +677,13 @@ static bool generate_butterfly_and_heatmaps(void)
   free_2d_double_array(W_values, IMAGE_HEIGHT);
   free_2d_double_array(A0_values, IMAGE_HEIGHT);
   free_2d_double_array(A1_values, IMAGE_HEIGHT);
+  free_2d_double_array(K0_values, IMAGE_HEIGHT);
+  free_2d_double_array(K1_values, IMAGE_HEIGHT);
+  free_2d_double_array(K2_values, IMAGE_HEIGHT);
   free_2d_double_array(H0_values, IMAGE_HEIGHT);
   free_2d_double_array(H1_values, IMAGE_HEIGHT);
   free_2d_double_array(H2_values, IMAGE_HEIGHT);
-  
+
   return true;
 }
 
@@ -648,8 +698,8 @@ bool butterfly(void)
     printf("\nRun #%d\n", i + 1);
     printf("------\n");
     double duration0 = 0.0;
-    if (!calculate_butterfly(REQUEST_IMAGE, &duration0)) {
-      perror("Problem in calculate_butterfly");
+    if (!generate_butterfly(REQUEST_IMAGE, &duration0)) {
+      perror("Problem in generate_butterfly");
       return false;
     }
     durations[i] = duration0;

@@ -5,9 +5,49 @@ Hamid Naderi Yeganeh is an artist which draws pictures with mathematical equatio
 Morpho buttterfly is one of its artworks ([X](https://www.instagram.com/p/DQmRlpliAVM/), [Instagram](https://x.com/naderi_yeganeh/status/1754107434224804305/)):
 ![original butterfly and equations](pics/original-morpho-butterfly-and-equations.jpg)
 
-The present repository reproduces this work with C:
+The present repository reproduces this work with C. The program uses OpenMP to parallelize calculations and [STB library](https://github.com/nothings/stb) to create the output image.
+
+According to the routine chosen in `main`, the program either:  
+\- generate butterfly (by changing `NB_RUNS`, it can be done several times, to compare durations)  
+\- generate butterfly and heatmaps.
+
+Generated butterfly:  
 ![output butterfly](pics/output-butterfly.jpg)
 
-The program uses OpenMP to parallelize calculations and [STB library](https://github.com/nothings/stb) to create the output image.
+C heatmap:  
+![C heatmap](pics/C-heatmap.png)
+
+E heatmap:  
+![E heatmap](pics/E-heatmap.png)
+
+L heatmap:  
+![L heatmap](pics/L-heatmap.png)
+
+W heatmap:  
+![L heatmap](pics/W-heatmap.png)
+
+A0 heatmap:  
+![A0 heatmap](pics/A0-heatmap.png)
+
+A1 heatmap:  
+![A1 heatmap](pics/A1-heatmap.png)
+
+K0 heatmap:  
+![K0 heatmap](pics/K0-heatmap.png)
+
+K1 heatmap:  
+![K1 heatmap](pics/K1-heatmap.png)
+
+K2 heatmap:  
+![K2 heatmap](pics/K2-heatmap.png)
+
+H0 heatmap:  
+![H0 heatmap](pics/H0-heatmap.png)
+
+H1 heatmap:  
+![H1 heatmap](pics/H1-heatmap.png)
+
+H2 heatmap:  
+![H2 heatmap](pics/H2-heatmap.png)
 
 (end of README)
