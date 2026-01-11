@@ -9,9 +9,13 @@ The present repository reproduces this work with C.
 
 The program uses OpenMP to parallelize calculations and [STB library](https://github.com/nothings/stb) to create the images.
 
-According to the routine chosen in `main`, the program either:  
-\- generate butterfly (by changing `NB_RUNS`, it can be done several times, to evaluate durations), or  
-\- generate butterfly and heatmaps of intermediate calculations.
+The program:  
+\- generates butterfly picture (by changing `NB_RUNS`, it can be done several times, to evaluate durations), and  
+\- generates heatmaps of intermediate calculations.
+
+See images below.
+
+Any comment? Open an [issue](https://github.com/occisn/c-morpho-butterfly/issues), or start a discussion [here](https://github.com/occisn/c-morpho-butterfly/discussions) or [at profile level](https://github.com/occisn/occisn/discussions).
 
 Generated butterfly:  
 ![output butterfly](pics/output-butterfly.jpg)
