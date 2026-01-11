@@ -34,10 +34,10 @@ static bool ensure_output_dir(void)
 }
 
 static bool stb_save_to_jpg(int height,
-                   int width,
-                   uint8_t **r_array,
-                   uint8_t **g_array,
-                   uint8_t **b_array)
+                            int width,
+                            uint8_t **r_array,
+                            uint8_t **g_array,
+                            uint8_t **b_array)
 {
   if (!ensure_output_dir()) {
     perror("Problem in output directory for pics\n");
@@ -175,7 +175,7 @@ static inline double F(double z)
   return res;
 }
 
-static uint8_t **alloc_2d_array(int height, int width)
+static uint8_t **alloc_2d_int_array(int height, int width)
 {
   uint8_t **array = malloc(sizeof(*array) * height);
   if (array == NULL) {
@@ -194,7 +194,7 @@ static uint8_t **alloc_2d_array(int height, int width)
   return array;
 }
 
-static void free_2d_array(uint8_t **array, int height)
+static void free_2d_int_array(uint8_t **array, int height)
 {
   if (array == NULL) {
     return;
@@ -203,6 +203,123 @@ static void free_2d_array(uint8_t **array, int height)
     free(array[n]);
   }
   free(array);
+}
+
+static double **alloc_2d_double_array(int height, int width)
+{
+  double **array = malloc(sizeof(*array) * height);
+  if (array == NULL) {
+    return NULL;
+  }
+  for (int n = 0; n < height; n++) {
+    array[n] = malloc(sizeof(*array[n]) * width);
+    if (array[n] == NULL) {
+      for (int i = 0; i < n; i++) {
+        free(array[i]);
+      }
+      free(array);
+      return NULL;
+    }
+  }
+  return array;
+}
+
+static void free_2d_double_array(double **array, int height)
+{
+  if (array == NULL) {
+    return;
+  }
+  for (int n = 0; n < height; n++) {
+    free(array[n]);
+  }
+  free(array);
+}
+
+/**
+ * Helper to convert Hue to RGB component
+ */
+static double hue_to_rgb(double p, double q, double t)
+{
+  if (t < 0.0)
+    t += 1.0;
+  if (t > 1.0)
+    t -= 1.0;
+  if (t < 1.0 / 6.0)
+    return p + (q - p) * 6.0 * t;
+  if (t < 0.5)
+    return q;
+  if (t < 2.0 / 3.0)
+    return p + (q - p) * (2.0 / 3.0 - t) * 6.0;
+  return p;
+}
+
+/**
+ * Heatmap Generator
+ * @param height        Image height
+ * @param width         Image width
+ * @param value_array   A pointer to a 2D array of [height][width]
+ * @param export_file   Filename string
+ */
+bool draw_heatmap_from_values(int height, int width, double **value_array, const char *export_file)
+{
+  if (height <= 0 || width <= 0 || !value_array)
+    return false;
+
+  if (!ensure_output_dir()) {
+    perror("Problem in output directory for pics\n");
+    return false;
+  }
+  
+  // (1) Calculate min, max, and range
+  // We can now access elements using 2D syntax: value_array[row][col]
+  double value_min = value_array[0][0];
+  double value_max = value_array[0][0];
+
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      double z = value_array[y][x];
+      if (z < value_min)
+        value_min = z;
+      if (z > value_max)
+        value_max = z;
+    }
+  }
+
+  double value_range = value_max - value_min;
+  if (value_range == 0.0)
+    value_range = 1.0;
+
+  // (2) Calculate RGB values
+  uint8_t *rgb_image = (uint8_t *)malloc(width * height * 3);
+  if (!rgb_image)
+    return false;
+
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      double z = value_array[y][x];
+      double w = (z - value_min) / value_range;
+
+      double h = (w * 1.2) / 3.6;
+      double s = 1.0;
+      double l = 0.5;
+
+      double q = (l < 0.5) ? (l * (1.0 + s)) : (l + s - l * s);
+      double p = 2.0 * l - q;
+
+      // Calculate flat index for the output buffer
+      int pixel_idx = (y * width + x) * 3;
+      rgb_image[pixel_idx + 0] = (uint8_t)(fmin(255.0, floor(255.0 * hue_to_rgb(p, q, h + 1.0 / 3.0))));
+      rgb_image[pixel_idx + 1] = (uint8_t)(fmin(255.0, floor(255.0 * hue_to_rgb(p, q, h))));
+      rgb_image[pixel_idx + 2] = (uint8_t)(fmin(255.0, floor(255.0 * hue_to_rgb(p, q, h - 1.0 / 3.0))));
+    }
+  }
+
+  // (3) Export to PNG
+  stbi_write_png(export_file, width, height, 3, rgb_image, width * 3);
+
+  free(rgb_image);
+
+  return true;
 }
 
 static bool calculate_butterfly(bool create_image, double *duration)
@@ -214,24 +331,24 @@ static bool calculate_butterfly(bool create_image, double *duration)
 
   // (2) Allocate RGB arrays
 
-  uint8_t **r_array = alloc_2d_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  uint8_t **r_array = alloc_2d_int_array(IMAGE_HEIGHT, IMAGE_WIDTH);
   if (r_array == NULL) {
     perror("Problem in malloc of r_array");
     return false;
   }
 
-  uint8_t **g_array = alloc_2d_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  uint8_t **g_array = alloc_2d_int_array(IMAGE_HEIGHT, IMAGE_WIDTH);
   if (g_array == NULL) {
     perror("Problem in malloc of g_array");
-    free_2d_array(r_array, IMAGE_HEIGHT);
+    free_2d_int_array(r_array, IMAGE_HEIGHT);
     return false;
   }
 
-  uint8_t **b_array = alloc_2d_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  uint8_t **b_array = alloc_2d_int_array(IMAGE_HEIGHT, IMAGE_WIDTH);
   if (b_array == NULL) {
     perror("Problem in malloc of b_array");
-    free_2d_array(r_array, IMAGE_HEIGHT);
-    free_2d_array(g_array, IMAGE_HEIGHT);
+    free_2d_int_array(r_array, IMAGE_HEIGHT);
+    free_2d_int_array(g_array, IMAGE_HEIGHT);
     return false;
   }
 
@@ -274,11 +391,14 @@ static bool calculate_butterfly(bool create_image, double *duration)
     }
   }
 
-  // (4) Create bmp and png images
+  // (4) Create output image
 
   if (create_image) {
     printf("Creating image...\n");
-    stb_save_to_jpg(IMAGE_HEIGHT, IMAGE_WIDTH, r_array, g_array, b_array);
+    if (!stb_save_to_jpg(IMAGE_HEIGHT, IMAGE_WIDTH, r_array, g_array, b_array)) {
+      perror("Problem in image generation\n");
+      return false;
+    }
   } else {
     printf("No image creation requested, so no image created.\n");
   }
@@ -286,9 +406,9 @@ static bool calculate_butterfly(bool create_image, double *duration)
   // (5) Free memory allocated to RGB arrays
 
   printf("Freeing memory allocated to RGB arrays...\n");
-  free_2d_array(r_array, IMAGE_HEIGHT);
-  free_2d_array(g_array, IMAGE_HEIGHT);
-  free_2d_array(b_array, IMAGE_HEIGHT);
+  free_2d_int_array(r_array, IMAGE_HEIGHT);
+  free_2d_int_array(g_array, IMAGE_HEIGHT);
+  free_2d_int_array(b_array, IMAGE_HEIGHT);
 
   // (6) Stop duration measurement
 
@@ -300,7 +420,224 @@ static bool calculate_butterfly(bool create_image, double *duration)
   return true;
 }
 
-int main(void)
+static bool generate_butterfly_and_heatmaps(void)
+{
+  // (1) Allocate RGB arrays
+
+  uint8_t **r_array = alloc_2d_int_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  if (r_array == NULL) {
+    perror("Problem in malloc of r_array");
+    return false;
+  }
+
+  uint8_t **g_array = alloc_2d_int_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  if (g_array == NULL) {
+    perror("Problem in malloc of g_array");
+    free_2d_int_array(r_array, IMAGE_HEIGHT);
+    return false;
+  }
+
+  uint8_t **b_array = alloc_2d_int_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  if (b_array == NULL) {
+    perror("Problem in malloc of b_array");
+    free_2d_int_array(r_array, IMAGE_HEIGHT);
+    free_2d_int_array(g_array, IMAGE_HEIGHT);
+    return false;
+  }
+
+  // (2) Allocate heatmaps array
+
+  double **C_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  if (C_values == NULL) {
+    perror("Problem in malloc for C\n");
+    return false;
+  }
+
+  double **E_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  if (E_values == NULL) {
+    perror("Problem in malloc for E\n");
+    return false;
+  }
+
+  double **L_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  if (L_values == NULL) {
+    perror("Problem in malloc for L\n");
+    return false;
+  }
+
+  double **W_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  if (W_values == NULL) {
+    perror("Problem in malloc for W\n");
+    return false;
+  }
+
+  double **A0_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  if (A0_values == NULL) {
+    perror("Problem in malloc for A0\n");
+    return false;
+  }
+  
+  double **A1_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  if (A1_values == NULL) {
+    perror("Problem in malloc for A1\n");
+    return false;
+  }
+  
+  double **H0_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  if (H0_values == NULL) {
+    perror("Problem in malloc for H0\n");
+    return false;
+  }
+  
+  double **H1_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  if (H1_values == NULL) {
+    perror("Problem in malloc for H1\n");
+    return false;
+  }
+  
+  double **H2_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  if (H2_values == NULL) {
+    perror("Problem in malloc for H2\n");
+    return false;
+  }
+
+  // (3) Populate arrays
+
+  printf("\nPopulating RGB arrays...\n");
+
+  const int num_cores = omp_get_num_procs();
+  printf("Number of cores on this system: %d\n", num_cores);
+  int chunk_size = IMAGE_HEIGHT / (4 * num_cores);
+  if (chunk_size < 1) {
+    chunk_size = 1;
+  }
+
+#pragma omp parallel for schedule(static, chunk_size)
+  for (int n = 1; n <= IMAGE_HEIGHT; n++) {
+
+    double Axy[2];
+    double Hxy[3];
+
+    for (int m = 1; m <= IMAGE_WIDTH; m++) {
+
+      double x = (m - 1000.0) / 960.0;
+      double y = (451.0 - n) / 960.0;
+      double Cxy = C(x, y);
+      C_values[n - 1][m - 1] = Cxy;
+      double Exy = E(x, y);
+      E_values[n - 1][m - 1] = Exy;
+      double Lxy = L(x, y);
+      L_values[n - 1][m - 1] = Lxy;
+      double Wxy = W(x, y, Cxy);
+      W_values[n - 1][m - 1] = Wxy;
+      A(Axy, x, y, Cxy);
+      A0_values[n - 1][m - 1] = Axy[0];
+      A1_values[n-1][m-1] = Axy[1];
+      H(Hxy, x, y, Exy, Lxy, Wxy, Axy);
+      H0_values[n-1][m-1] = Hxy[0];
+      H1_values[n-1][m-1] = Hxy[1];
+      H2_values[n-1][m-1] = Hxy[2];
+      r_array[n - 1][m - 1] = F(Hxy[0]);
+      g_array[n - 1][m - 1] = F(Hxy[1]);
+      b_array[n - 1][m - 1] = F(Hxy[2]);
+
+      if ((m == 1) && ((n == 1) || ((n % 100) == 0))) {
+        printf("n = %d / %d\n", n, IMAGE_HEIGHT);
+        fflush(stdout);
+      }
+    }
+  }
+
+  // (4) Create butterfly image
+
+  printf("\nCreating image...\n");
+  if (!stb_save_to_jpg(IMAGE_HEIGHT, IMAGE_WIDTH, r_array, g_array, b_array)) {
+    perror("Problem in butterfly image generation\n");
+    return false;
+  }
+
+  // (5) Create heatmaps
+
+  printf("\n");
+
+  printf("Generate C heatmap...\n");
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, C_values, OUTPUT_DIR "/C-heatmap.png")) {
+    perror("Problem in draw_heatmap_from_values for C heatmap\n");
+    return false;
+  }
+
+  printf("Generate E heatmap...\n");
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, E_values, OUTPUT_DIR "/E-heatmap.png")) {
+    perror("Problem in draw_heatmap_from_values for E heatmap\n");
+    return false;
+  }
+
+  printf("Generate L heatmap...\n");
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, L_values, OUTPUT_DIR "/L-heatmap.png")) {
+    perror("Problem in draw_heatmap_from_values for L heatmap\n");
+    return false;
+  }
+
+  printf("Generate W heatmap...\n");
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, W_values, OUTPUT_DIR "/W-heatmap.png")) {
+    perror("Problem in draw_heatmap_from_values for W heatmap\n");
+    return false;
+  }
+
+  printf("Generate A0 heatmap...\n");
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, A0_values, OUTPUT_DIR "/A0-heatmap.png")) {
+    perror("Problem in draw_heatmap_from_values for A0 heatmap\n");
+    return false;
+  }
+
+  printf("Generate A1 heatmap...\n");
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, A1_values, OUTPUT_DIR "/A1-heatmap.png")) {
+    perror("Problem in draw_heatmap_from_values for A1 heatmap\n");
+    return false;
+  }
+
+  printf("Generate H0 heatmap...\n");
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, H0_values, OUTPUT_DIR "/H0-heatmap.png")) {
+    perror("Problem in draw_heatmap_from_values for H0 heatmap\n");
+    return false;
+  }
+
+  printf("Generate H1 heatmap...\n");
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, H1_values, OUTPUT_DIR "/H1-heatmap.png")) {
+    perror("Problem in draw_heatmap_from_values for H1 heatmap\n");
+    return false;
+  }
+
+  printf("Generate H2 heatmap...\n");
+  if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, H2_values, OUTPUT_DIR "/H2-heatmap.png")) {
+    perror("Problem in draw_heatmap_from_values for H2 heatmap\n");
+    return false;
+  }
+
+  // (6) Free memory allocated to RGB arrays
+
+  printf("\nFreeing memory allocated to RGB arrays...\n");
+  free_2d_int_array(r_array, IMAGE_HEIGHT);
+  free_2d_int_array(g_array, IMAGE_HEIGHT);
+  free_2d_int_array(b_array, IMAGE_HEIGHT);
+
+  // (7) Free memory allocated to heatmaps
+
+  printf("\nFreeing memory allocated to heatmaps...\n");
+  free_2d_double_array(C_values, IMAGE_HEIGHT);
+  free_2d_double_array(E_values, IMAGE_HEIGHT);
+  free_2d_double_array(L_values, IMAGE_HEIGHT);
+  free_2d_double_array(W_values, IMAGE_HEIGHT);
+  free_2d_double_array(A0_values, IMAGE_HEIGHT);
+  free_2d_double_array(A1_values, IMAGE_HEIGHT);
+  free_2d_double_array(H0_values, IMAGE_HEIGHT);
+  free_2d_double_array(H1_values, IMAGE_HEIGHT);
+  free_2d_double_array(H2_values, IMAGE_HEIGHT);
+  
+  return true;
+}
+
+bool butterfly(void)
 {
   const int NB_RUNS = 1;
   const bool REQUEST_IMAGE = true;
@@ -313,7 +650,7 @@ int main(void)
     double duration0 = 0.0;
     if (!calculate_butterfly(REQUEST_IMAGE, &duration0)) {
       perror("Problem in calculate_butterfly");
-      return EXIT_FAILURE;
+      return false;
     }
     durations[i] = duration0;
     if (durations[i] < min_duration) {
@@ -326,7 +663,20 @@ int main(void)
     printf("  Run %d: %f seconds\n", i + 1, durations[i]);
   }
   printf("Quickest execution duration: %f seconds\n", min_duration);
-  return EXIT_SUCCESS;
+  return true;
+}
+
+int main(void)
+{
+  // bool res = butterfly();
+  bool res = generate_butterfly_and_heatmaps();
+
+  if (res) {
+    return EXIT_SUCCESS;
+  } else {
+    perror("Problem in running butterfly or heatmap\n");
+    return EXIT_FAILURE;
+  }
 }
 
 // end
