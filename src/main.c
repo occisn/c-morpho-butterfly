@@ -152,7 +152,8 @@ static inline double K(uint8_t v, double x, double y)
 /* Calculates H(v,x,y) knowing E(x,y), L(x,y), W(x,y), A(v,x,y) */
 static inline void H(double *Hxy, double x, double y, double Exy, double Lxy, double Wxy, const double *Axy)
 {
-  const double H_part1 = Axy[0] * Axy[1] * (1.0 - Exy) * (1.0 + Lxy * (1.0 / 50.0)) * exp_minus_exp(0 + exp((2.0 * y) + (0.5 * x) + (2.0 / 5.0) - (2.0 * fabs(x - (y * 0.25)))) + exp((8.0 * y) + (2.0 * x) + (2.0 / 5.0) - fabs((8.0 * x) - (2.0 * y)))) * Wxy;
+  // const double H_part1 = Axy[0] * Axy[1] * (1.0 - Exy) * (1.0 + Lxy * (1.0 / 50.0)) * exp_minus_exp(0 + exp((2.0 * y) + (0.5 * x) + (2.0 / 5.0) - (2.0 * fabs(x - (y * 0.25)))) + exp((8.0 * y) + (2.0 * x) + (2.0 / 5.0) - fabs((8.0 * x) - (2.0 * y)))) * Wxy;
+  const double H_part1 = Axy[0] * Axy[1] * (1.0 - Exy) * (1.0 + Lxy * (1.0 / 50.0)) * exp_minus_exp_minus_exp((2.0 * y) + (0.5 * x) + (2.0 / 5.0) - (2.0 * fabs(x - (y * 0.25))), (8.0 * y) + (2.0 * x) + (2.0 / 5.0) - fabs((8.0 * x) - (2.0 * y))) * Wxy;
   const double H_part2 = exp_minus_exp(-(50.0 *
                                          ((pow(cos((2.0 * y) + (x * 0.5) + (7.0 / 5.0) - fabs((2.0 * x) - (y * 0.5))),
                                                80) *
