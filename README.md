@@ -2,12 +2,12 @@
 
 Hamid Naderi Yeganeh is an artist which draws pictures with mathematical equations: [Wikipedia](https://en.wikipedia.org/wiki/Hamid_Naderi_Yeganeh), [X](https://x.com/naderi_yeganeh), [Instagram](https://www.instagram.com/hamidnaderiyeganeh/), [YouTube](https://www.youtube.com/@naderiyeganeh).
 
-Morpho buttterfly is one of its artworks ([X](https://www.instagram.com/p/DQmRlpliAVM/), [Instagram](https://x.com/naderi_yeganeh/status/1754107434224804305/)):
+Morpho buttterfly is one of his artworks ([X](https://www.instagram.com/p/DQmRlpliAVM/), [Instagram](https://x.com/naderi_yeganeh/status/1754107434224804305/)):
 ![original butterfly and equations](pics/original-morpho-butterfly-and-equations.jpg)
 
 The present repository reproduces this work with C.
 
-The program uses OpenMP to parallelize calculations and [STB library](https://github.com/nothings/stb) to create the output image.
+The program uses OpenMP to parallelize calculations and [STB library](https://github.com/nothings/stb) to create the images.
 
 According to the routine chosen in `main`, the program either:  
 \- generate butterfly (by changing `NB_RUNS`, it can be done several times, to evaluate durations), or  
