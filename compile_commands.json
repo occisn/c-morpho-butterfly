@@ -1,0 +1,23 @@
+[
+ {
+  "directory": "c:\\Users\\nicol\\Dropbox\\local-repos\\c-morpho-butterfly",
+  "arguments": [
+   "gcc",
+   "-Wall",
+   "-Wextra",
+   "-Werror",
+   "-pedantic",
+   "-std=c2x",
+   "-O3",
+   "-fopenmp",
+   "-march=native",
+   "-Isrc",
+   "-Iinclude",
+   "-c",
+   "src/main.c",
+   "-o",
+   "build/main.o"
+  ],
+  "file": "src/main.c"
+ }
+]
