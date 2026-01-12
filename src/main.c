@@ -19,26 +19,11 @@
 static bool stb_rgb_save_to_jpg(char *filename,
                                 int height,
                                 int width,
-                                uint8_t **r_array,
-                                uint8_t **g_array,
-                                uint8_t **b_array)
+                                uint8_t *rgb_array)
 {
 
   const int channels = 3;
-  uint8_t *rgb = malloc(width * height * channels);
-  if (!rgb) {
-    perror("Failed to allocate RGB buffer for saving");
-    return false;
-  }
-
-  for (int y = 0; y < height; ++y) {
-    for (int x = 0; x < width; ++x) {
-      int idx = (y * width + x) * channels;
-      rgb[idx + 0] = r_array[y][x];
-      rgb[idx + 1] = g_array[y][x];
-      rgb[idx + 2] = b_array[y][x];
-    }
-  }
+  assert(rgb_array != NULL);
 
   // stbi_write_bmp(OUTPUT_DIR "/output-butterfly.bmp", width, height, channels, rgb);
 
@@ -54,10 +39,9 @@ static bool stb_rgb_save_to_jpg(char *filename,
                  width,
                  height,
                  channels,
-                 rgb,
+                 rgb_array,
                  quality);
 
-  free(rgb);
   return true;
 }
 
@@ -157,36 +141,6 @@ static inline double F(double z)
   return res;
 }
 
-static uint8_t **alloc_2d_int_array(int height, int width)
-{
-  uint8_t **array = malloc(sizeof(*array) * height);
-  if (array == NULL) {
-    return NULL;
-  }
-  for (int n = 0; n < height; n++) {
-    array[n] = malloc(sizeof(*array[n]) * width);
-    if (array[n] == NULL) {
-      for (int i = 0; i < n; i++) {
-        free(array[i]);
-      }
-      free(array);
-      return NULL;
-    }
-  }
-  return array;
-}
-
-static void free_2d_int_array(uint8_t **array, int height)
-{
-  if (array == NULL) {
-    return;
-  }
-  for (int n = 0; n < height; n++) {
-    free(array[n]);
-  }
-  free(array);
-}
-
 /**
  * Helper to convert Hue to RGB component
  */
@@ -279,30 +233,15 @@ static bool generate_butterfly(bool create_image, double *duration)
   struct timespec start = {0}, end = {0};
   clock_gettime(CLOCK_MONOTONIC, &start);
 
-  // (2) Allocate RGB arrays
+  // (2) Allocate RGB array
 
-  uint8_t **r_array = alloc_2d_int_array(IMAGE_HEIGHT, IMAGE_WIDTH);
-  if (r_array == NULL) {
-    perror("Problem in malloc of r_array");
+  uint8_t *rgb_array = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * 3);
+  if (rgb_array == NULL) {
+    perror("Problem in malloc of rgb_array\n");
     return false;
   }
 
-  uint8_t **g_array = alloc_2d_int_array(IMAGE_HEIGHT, IMAGE_WIDTH);
-  if (g_array == NULL) {
-    perror("Problem in malloc of g_array");
-    free_2d_int_array(r_array, IMAGE_HEIGHT);
-    return false;
-  }
-
-  uint8_t **b_array = alloc_2d_int_array(IMAGE_HEIGHT, IMAGE_WIDTH);
-  if (b_array == NULL) {
-    perror("Problem in malloc of b_array");
-    free_2d_int_array(r_array, IMAGE_HEIGHT);
-    free_2d_int_array(g_array, IMAGE_HEIGHT);
-    return false;
-  }
-
-  // (3) Populate RGB arrays
+  // (3) Populate RGB array
 
   const int num_cores = omp_get_num_procs();
   printf("\nNumber of cores on this system: %d\n", num_cores);
@@ -333,9 +272,10 @@ static bool generate_butterfly(bool create_image, double *duration)
       K(Kxy, x, y);
       H(Hxy, x, y, Exy, Lxy, Wxy, Axy, Kxy);
 
-      r_array[n - 1][m - 1] = F(Hxy[0]);
-      g_array[n - 1][m - 1] = F(Hxy[1]);
-      b_array[n - 1][m - 1] = F(Hxy[2]);
+      int idx = ((n-1) * IMAGE_WIDTH + (m-1)) * 3;
+      rgb_array[idx + 0] = F(Hxy[0]);
+      rgb_array[idx + 1] = F(Hxy[1]);
+      rgb_array[idx + 2] = F(Hxy[2]);
 
       if ((m == 1) && ((n == 1) || ((n % 100) == 0))) {
         printf("n = %d / %d\n", n, IMAGE_HEIGHT);
@@ -348,7 +288,7 @@ static bool generate_butterfly(bool create_image, double *duration)
 
   if (create_image) {
     printf("Creating image...\n");
-    if (!stb_rgb_save_to_jpg(OUTPUT_DIR "/output-butterfly.jpg", IMAGE_HEIGHT, IMAGE_WIDTH, r_array, g_array, b_array)) {
+    if (!stb_rgb_save_to_jpg(OUTPUT_DIR "/output-butterfly.jpg", IMAGE_HEIGHT, IMAGE_WIDTH, rgb_array)) {
       perror("Problem in image generation\n");
       return false;
     }
@@ -358,10 +298,8 @@ static bool generate_butterfly(bool create_image, double *duration)
 
   // (5) Free memory allocated to RGB arrays
 
-  printf("Freeing memory allocated to RGB arrays...\n");
-  free_2d_int_array(r_array, IMAGE_HEIGHT);
-  free_2d_int_array(g_array, IMAGE_HEIGHT);
-  free_2d_int_array(b_array, IMAGE_HEIGHT);
+  printf("Freeing memory allocated to RGB array...\n");
+  free(rgb_array);
 
   // (6) Stop duration measurement
 
