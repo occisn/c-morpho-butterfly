@@ -57,8 +57,10 @@ static inline double W(double x, double y, double Cxy)
   const double omega2 = -(40.0 * (0 + (5.0 * fabs(y + (x * 0.25) - (3.0 / 50.0) + ((1.0 / 3.0) * (x - (y * 0.25)) * (x - (y * 0.25))))) + pow(fabs((2.0 * x) - (y * 0.5)), 3) - (2.0 / 5.0)));
   const double omega3 = -1000 * fabs(x - (y * 0.25)) + 100.0 - 90.0 * atan(8.0 * y + 2.0 * x + (8.0 / 5.0));
   const double omega4 = 1000 * (0.0 + fabs(x - y * 0.25) - (7.0 / 50.0) + (9.0 * (y + (x * 0.25) + 0.2) * (1.0 / 20.0)));
-  const double omega5 = 70 * fabs((5 * (fabs(y + x * 0.25 - (3.0 / 50.0) + ((1.0 / 3.0) * (x - (y * 0.25)) * (x - (y * 0.25)))))) + (pow(fabs((2.0 * x) - (y * 0.5)), 3)) - (2.0 / 5.0)) - (1.0 / 200.0);
-  const double omega6 = 700 * fabs(0.0 + fabs(x - y * 0.25) - 0.1 + (0.9 * atan(8.0 * (y + (x * 0.25) + 0.2)))) - (21.0 / 20.0);
+  // const double omega5 = 70 * fabs((5 * (fabs(y + x * 0.25 - (3.0 / 50.0) + ((1.0 / 3.0) * (x - (y * 0.25)) * (x - (y * 0.25)))))) + (pow(fabs((2.0 * x) - (y * 0.5)), 3)) - (2.0 / 5.0)) - (1.0 / 200.0);
+  const double omega5 = 70 * (fabs((5 * (fabs(y + x * 0.25 - (3.0 / 50.0) + ((1.0 / 3.0) * (x - (y * 0.25)) * (x - (y * 0.25)))))) + (pow(fabs((2.0 * x) - (y * 0.5)), 3)) - (2.0 / 5.0)) - (1.0 / 200.0));
+  // const double omega6 = 700 * fabs(0.0 + fabs(x - y * 0.25) - 0.1 + (0.9 * atan(8.0 * (y + (x * 0.25) + 0.2)))) - (21.0 / 20.0);
+  const double omega6 = 700 * fabs(0.0 + fabs(x - y * 0.25) - 0.1 + (0.09 * atan(8.0 * (y + (x * 0.25) + 0.2)))) - (21.0 / 20.0);
   const double res = (-exp_minus_exp_minus_exp(omega1, omega2)) * (1.0 - exp_minus_exp_minus_exp(omega3, omega4)) - exp_minus_exp(omega5) - exp_minus_exp(omega6) + 1.0;
   return res;
 }
