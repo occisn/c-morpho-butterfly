@@ -16,35 +16,6 @@
 #define IMAGE_WIDTH 2000  // for m
 #define OUTPUT_DIR "pics"
 
-static bool stb_rgb_save_to_jpg(char *filename,
-                                int height,
-                                int width,
-                                uint8_t *rgb_array)
-{
-
-  const int channels = 3;
-  assert(rgb_array != NULL);
-
-  // stbi_write_bmp(OUTPUT_DIR "/output-butterfly.bmp", width, height, channels, rgb);
-
-  // stbi_write_png(OUTPUT_DIR "/output-butterfly.png",
-  //                width,
-  //                height,
-  //                channels,
-  //                rgb,
-  //                width * channels);
-
-  const int quality = 90;
-  stbi_write_jpg(filename,
-                 width,
-                 height,
-                 channels,
-                 rgb_array,
-                 quality);
-
-  return true;
-}
-
 static inline double exp_minus_exp(double x)
 {
   return (x > 85.0) ? 0.0 : exp(-exp(x));
@@ -225,7 +196,7 @@ bool draw_heatmap_from_values(int height, int width, double *value_array, const 
   return true;
 }
 
-static bool generate_butterfly(bool create_image, double *duration)
+static bool generate_butterfly(double *duration)
 {
 
   // (1) Start duration measurement
@@ -272,7 +243,7 @@ static bool generate_butterfly(bool create_image, double *duration)
       K(Kxy, x, y);
       H(Hxy, x, y, Exy, Lxy, Wxy, Axy, Kxy);
 
-      int idx = ((n-1) * IMAGE_WIDTH + (m-1)) * 3;
+      int idx = ((n - 1) * IMAGE_WIDTH + (m - 1)) * 3;
       rgb_array[idx + 0] = F(Hxy[0]);
       rgb_array[idx + 1] = F(Hxy[1]);
       rgb_array[idx + 2] = F(Hxy[2]);
@@ -286,17 +257,18 @@ static bool generate_butterfly(bool create_image, double *duration)
 
   // (4) Create output image
 
-  if (create_image) {
-    printf("Creating image...\n");
-    if (!stb_rgb_save_to_jpg(OUTPUT_DIR "/output-butterfly.jpg", IMAGE_HEIGHT, IMAGE_WIDTH, rgb_array)) {
-      perror("Problem in image generation\n");
-      return false;
-    }
-  } else {
-    printf("No image creation requested, so no image created.\n");
-  }
+  printf("Creating image...\n");
+    
+    const int channels = 3;
+    const int quality = 90;
+    stbi_write_jpg(OUTPUT_DIR "/output-butterfly.jpg",
+                   IMAGE_WIDTH,
+                   IMAGE_HEIGHT,
+                   channels,
+                   rgb_array,
+                   quality);
 
-  // (5) Free memory allocated to RGB arrays
+  // (5) Free memory allocated to RGB array
 
   printf("Freeing memory allocated to RGB array...\n");
   free(rgb_array);
@@ -536,7 +508,6 @@ static bool generate_heatmaps(void)
 bool run_butterfly(void)
 {
   const int NB_RUNS = 1;
-  const bool REQUEST_IMAGE = true;
   double durations[NB_RUNS];
   double min_duration = DBL_MAX;
 
@@ -544,7 +515,7 @@ bool run_butterfly(void)
     printf("\nRun #%d\n", i + 1);
     printf("------\n");
     double duration0 = 0.0;
-    if (!generate_butterfly(REQUEST_IMAGE, &duration0)) {
+    if (!generate_butterfly(&duration0)) {
       perror("Problem in generate_butterfly");
       return false;
     }
