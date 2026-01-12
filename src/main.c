@@ -189,7 +189,12 @@ bool draw_heatmap_from_values(int height, int width, double *value_array, const 
 
   // (3) Export to JPG
   const int quality = 90;
-  stbi_write_jpg(export_file, width, height, 3, rgb_image, quality);
+  const int channels = 3;
+  if (stbi_write_jpg(export_file, width, height, channels, rgb_image, quality) == 0) {
+    perror("Problem in stbi_write_jpg\n");
+    free(rgb_image);
+    return false;
+  }
 
   free(rgb_image);
 
@@ -258,15 +263,19 @@ static bool generate_butterfly(double *duration)
   // (4) Create output image
 
   printf("Creating image...\n");
-    
-    const int channels = 3;
-    const int quality = 90;
-    stbi_write_jpg(OUTPUT_DIR "/output-butterfly.jpg",
-                   IMAGE_WIDTH,
-                   IMAGE_HEIGHT,
-                   channels,
-                   rgb_array,
-                   quality);
+
+  const int channels = 3;
+  const int quality = 90;
+  if (stbi_write_jpg(OUTPUT_DIR "/output-butterfly.jpg",
+                     IMAGE_WIDTH,
+                     IMAGE_HEIGHT,
+                     channels,
+                     rgb_array,
+                     quality) == 0) {
+    perror("Problem in stbi_write_jpg\n");
+    free(rgb_array);
+    return false;
+  }
 
   // (5) Free memory allocated to RGB array
 
