@@ -187,36 +187,6 @@ static void free_2d_int_array(uint8_t **array, int height)
   free(array);
 }
 
-static double **alloc_2d_double_array(int height, int width)
-{
-  double **array = malloc(sizeof(*array) * height);
-  if (array == NULL) {
-    return NULL;
-  }
-  for (int n = 0; n < height; n++) {
-    array[n] = malloc(sizeof(*array[n]) * width);
-    if (array[n] == NULL) {
-      for (int i = 0; i < n; i++) {
-        free(array[i]);
-      }
-      free(array);
-      return NULL;
-    }
-  }
-  return array;
-}
-
-static void free_2d_double_array(double **array, int height)
-{
-  if (array == NULL) {
-    return;
-  }
-  for (int n = 0; n < height; n++) {
-    free(array[n]);
-  }
-  free(array);
-}
-
 /**
  * Helper to convert Hue to RGB component
  */
@@ -239,22 +209,22 @@ static double hue_to_rgb(double p, double q, double t)
  * Heatmap Generator
  * @param height        Image height
  * @param width         Image width
- * @param value_array   A pointer to a 2D array of [height][width]
+ * @param value_array   A pointer to a array of height x width
  * @param export_file   Filename string
  */
-bool draw_heatmap_from_values(int height, int width, double **value_array, const char *export_file)
+bool draw_heatmap_from_values(int height, int width, double *value_array, const char *export_file)
 {
   if (height <= 0 || width <= 0 || !value_array)
     return false;
 
   // (1) Calculate min, max, and range
   // We can now access elements using 2D syntax: value_array[row][col]
-  double value_min = value_array[0][0];
-  double value_max = value_array[0][0];
+  double value_min = value_array[0];
+  double value_max = value_array[0];
 
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
-      double z = value_array[y][x];
+      double z = value_array[y * width + x];
       if (z < value_min)
         value_min = z;
       if (z > value_max)
@@ -273,7 +243,8 @@ bool draw_heatmap_from_values(int height, int width, double **value_array, const
 
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
-      double z = value_array[y][x];
+
+      double z = value_array[y * width + x];
       double w = (z - value_min) / value_range;
 
       double h = (w * 1.2) / 3.6;
@@ -407,75 +378,75 @@ static bool generate_heatmaps(void)
 
   // (1) Allocate heatmaps array
 
-  double **C_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  double *C_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *C_values);
   if (C_values == NULL) {
-    perror("Problem in malloc for C\n");
+    perror("Error in malloc of C_values\n");
     return false;
   }
 
-  double **E_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  double *E_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *E_values);
   if (E_values == NULL) {
-    perror("Problem in malloc for E\n");
+    perror("Error in malloc of E_values\n");
     return false;
   }
 
-  double **L_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  double *L_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *L_values);
   if (L_values == NULL) {
-    perror("Problem in malloc for L\n");
+    perror("Error in malloc of L_values\n");
     return false;
   }
 
-  double **W_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  double *W_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *W_values);
   if (W_values == NULL) {
-    perror("Problem in malloc for W\n");
+    perror("Error in malloc of W_values\n");
     return false;
   }
 
-  double **A0_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  double *A0_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *A0_values);
   if (A0_values == NULL) {
-    perror("Problem in malloc for A0\n");
+    perror("Error in malloc of A0_values\n");
     return false;
   }
 
-  double **A1_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  double *A1_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *A1_values);
   if (A1_values == NULL) {
-    perror("Problem in malloc for A1\n");
+    perror("Error in malloc of A1_values\n");
     return false;
   }
 
-  double **K0_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  double *K0_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *K0_values);
   if (K0_values == NULL) {
-    perror("Problem in malloc for K0\n");
+    perror("Error in malloc of K0_values\n");
     return false;
   }
 
-  double **K1_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  double *K1_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *K1_values);
   if (K1_values == NULL) {
-    perror("Problem in malloc for K1\n");
+    perror("Error in malloc of K1_values\n");
     return false;
   }
 
-  double **K2_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  double *K2_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *K2_values);
   if (K2_values == NULL) {
-    perror("Problem in malloc for K2\n");
+    perror("Error in malloc of K2_values\n");
     return false;
   }
 
-  double **H0_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  double *H0_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *H0_values);
   if (H0_values == NULL) {
-    perror("Problem in malloc for H0\n");
+    perror("Error in malloc of H0_values\n");
     return false;
   }
 
-  double **H1_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  double *H1_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *H1_values);
   if (H1_values == NULL) {
-    perror("Problem in malloc for H1\n");
+    perror("Error in malloc of H1_values\n");
     return false;
   }
 
-  double **H2_values = alloc_2d_double_array(IMAGE_HEIGHT, IMAGE_WIDTH);
+  double *H2_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *H2_values);
   if (H2_values == NULL) {
-    perror("Problem in malloc for H2\n");
+    perror("Error in malloc of H2_values\n");
     return false;
   }
 
@@ -503,24 +474,24 @@ static bool generate_heatmaps(void)
       double x = (m - 1000.0) / 960.0;
       double y = (451.0 - n) / 960.0;
       double Cxy = C(x, y);
-      C_values[n - 1][m - 1] = Cxy;
+      C_values[(n - 1) * IMAGE_WIDTH + (m - 1)] = Cxy;
       double Exy = E(x, y);
-      E_values[n - 1][m - 1] = Exy;
+      E_values[(n - 1) * IMAGE_WIDTH + (m - 1)] = Exy;
       double Lxy = L(x, y);
-      L_values[n - 1][m - 1] = Lxy;
+      L_values[(n - 1) * IMAGE_WIDTH + (m - 1)] = Lxy;
       double Wxy = W(x, y, Cxy);
-      W_values[n - 1][m - 1] = Wxy;
+      W_values[(n - 1) * IMAGE_WIDTH + (m - 1)] = Wxy;
       A(Axy, x, y, Cxy);
-      A0_values[n - 1][m - 1] = Axy[0];
-      A1_values[n - 1][m - 1] = Axy[1];
+      A0_values[(n - 1) * IMAGE_WIDTH + (m - 1)] = Axy[0];
+      A1_values[(n - 1) * IMAGE_WIDTH + (m - 1)] = Axy[1];
       K(Kxy, x, y);
-      K0_values[n - 1][m - 1] = Kxy[0];
-      K1_values[n - 1][m - 1] = Kxy[1];
-      K2_values[n - 1][m - 1] = Kxy[2];
+      K0_values[(n - 1) * IMAGE_WIDTH + (m - 1)] = Kxy[0];
+      K1_values[(n - 1) * IMAGE_WIDTH + (m - 1)] = Kxy[1];
+      K2_values[(n - 1) * IMAGE_WIDTH + (m - 1)] = Kxy[2];
       H(Hxy, x, y, Exy, Lxy, Wxy, Axy, Kxy);
-      H0_values[n - 1][m - 1] = Hxy[0];
-      H1_values[n - 1][m - 1] = Hxy[1];
-      H2_values[n - 1][m - 1] = Hxy[2];
+      H0_values[(n - 1) * IMAGE_WIDTH + (m - 1)] = Hxy[0];
+      H1_values[(n - 1) * IMAGE_WIDTH + (m - 1)] = Hxy[1];
+      H2_values[(n - 1) * IMAGE_WIDTH + (m - 1)] = Hxy[2];
 
       if ((m == 1) && ((n == 1) || ((n % 100) == 0))) {
         printf("n = %d / %d\n", n, IMAGE_HEIGHT);
@@ -608,18 +579,18 @@ static bool generate_heatmaps(void)
   // (4) Free memory allocated to heatmaps
 
   printf("\nFreeing memory allocated to heatmaps...\n");
-  free_2d_double_array(C_values, IMAGE_HEIGHT);
-  free_2d_double_array(E_values, IMAGE_HEIGHT);
-  free_2d_double_array(L_values, IMAGE_HEIGHT);
-  free_2d_double_array(W_values, IMAGE_HEIGHT);
-  free_2d_double_array(A0_values, IMAGE_HEIGHT);
-  free_2d_double_array(A1_values, IMAGE_HEIGHT);
-  free_2d_double_array(K0_values, IMAGE_HEIGHT);
-  free_2d_double_array(K1_values, IMAGE_HEIGHT);
-  free_2d_double_array(K2_values, IMAGE_HEIGHT);
-  free_2d_double_array(H0_values, IMAGE_HEIGHT);
-  free_2d_double_array(H1_values, IMAGE_HEIGHT);
-  free_2d_double_array(H2_values, IMAGE_HEIGHT);
+  free(C_values);
+  free(E_values);
+  free(L_values);
+  free(W_values);
+  free(A0_values);
+  free(A1_values);
+  free(K0_values);
+  free(K1_values);
+  free(K2_values);
+  free(H0_values);
+  free(H1_values);
+  free(H2_values);
 
   return true;
 }
