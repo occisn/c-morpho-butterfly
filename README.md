@@ -17,6 +17,8 @@ See images below.
 
 Any comment? Open an [issue](https://github.com/occisn/c-morpho-butterfly/issues), or start a discussion [here](https://github.com/occisn/c-morpho-butterfly/discussions) or [at profile level](https://github.com/occisn/occisn/discussions).
 
+([the same in Common Lisp](https://github.com/occisn/cl-morpho-butterfly))
+
 Generated butterfly:  
 ![output butterfly](pics/output-butterfly.jpg)
 

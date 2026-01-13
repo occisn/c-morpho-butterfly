@@ -45,7 +45,11 @@ static inline double L(double x, double y)
 {
   double res = 0.0;
   for (uint8_t s = 1; s <= 25; s++) {
-    res += pow(sin(((80.0 + 30.0 * sin(s * s)) * atan((100.0 * y + 25.0 * x - 4.0 * sin(s)) / (1.0 + fabs(100.0 * x - 25.0 * y - 3.0 * atan(100.0 * x - 25.0 * y))))) + fabs((x * 0.5) - (y / 8.0)) + (4.0 * sin(5.0 * s))), 6);
+    double tmp1 = (80.0 + 30.0 * sin(s * s));
+    double tmp2 = (100.0 * y + 25.0 * x - 4.0 * sin(s));
+    double tmp3 = (100.0 * x - 25.0 * y - 3.0 * atan(100.0 * x - 25.0 * y));
+    double tmp4 = tmp1 * atan(tmp2 / (1.0 + fabs(tmp3))) + fabs((x * 0.5) - (y / 8.0)) + (4.0 * sin(5.0 * s));
+    res += pow(sin(tmp4), 6);
   }
   return res;
 }
@@ -123,11 +127,11 @@ static double hue_to_rgb(double p, double q, double t)
     t += 1.0;
   if (t > 1.0)
     t -= 1.0;
-  if (t < 1.0 / 6.0)
+  if (t < (1.0 / 6.0))
     return p + (q - p) * 6.0 * t;
   if (t < 0.5)
     return q;
-  if (t < 2.0 / 3.0)
+  if (t < (2.0 / 3.0))
     return p + (q - p) * (2.0 / 3.0 - t) * 6.0;
   return p;
 }
@@ -139,7 +143,7 @@ static double hue_to_rgb(double p, double q, double t)
  * @param value_array   A pointer to a array of height x width
  * @param export_file   Filename string
  */
-bool draw_heatmap_from_values(int height, int width, double *value_array, const char *export_file)
+bool draw_heatmap_from_values(int height, int width, const double *value_array, const char *export_file)
 {
   if (height <= 0 || width <= 0 || !value_array)
     return false;
@@ -159,9 +163,15 @@ bool draw_heatmap_from_values(int height, int width, double *value_array, const 
     }
   }
 
+  /* if (strcmp(export_file, "pics/L-heatmap.jpg") == 0) { */
+  /*   printf("\n\nL: min = %f\nL: max = %f\n\n", value_min, value_max); */
+  /* } */
+
   double value_range = value_max - value_min;
-  if (value_range == 0.0)
-    value_range = 1.0;
+  /* if (value_range == 0.0) { */
+  /*   printf("\n\n===> STRANGE: VALUE_RANGE = 0.0 <===\n\n"); */
+  /*   value_range = 1.0; */
+  /* } */
 
   // (2) Calculate RGB values
   uint8_t *rgb_image = (uint8_t *)malloc(width * height * 3);
@@ -178,7 +188,7 @@ bool draw_heatmap_from_values(int height, int width, double *value_array, const 
       double s = 1.0;
       double l = 0.5;
 
-      double q = (l < 0.5) ? (l * (1.0 + s)) : (l + s - l * s);
+      double q = l + s - l * s;
       double p = 2.0 * l - q;
 
       // Calculate flat index for the output buffer
@@ -250,10 +260,24 @@ static bool generate_butterfly(double *duration)
       K(Kxy, x, y);
       H(Hxy, x, y, Exy, Lxy, Wxy, Axy, Kxy);
 
+      /* if ((n == 580) && (m == 1354)) { */
+      /*   printf("\n\nn = %d, m = %d\n", n, m); */
+      /*   printf("   Cxy = %f\n", Cxy); */
+      /*   printf("   Exy = %f\n", Exy); */
+      /*   printf("   Lxy = %f\n", Lxy); */
+      /* } */
+
       int idx = ((n - 1) * IMAGE_WIDTH + (m - 1)) * 3;
       rgb_array[idx + 0] = F(Hxy[0]);
       rgb_array[idx + 1] = F(Hxy[1]);
       rgb_array[idx + 2] = F(Hxy[2]);
+
+      /* if ((m == 1) && (n == 1)) { */
+      /*   printf("\n\nL00 = %f\n\n", Lxy); */
+      /* } */
+      /* if ((m == 1) && (n == 500)) { */
+      /*   printf("\n\nL500,0 = %f\n\n", Lxy); */
+      /* } */
 
       if ((m == 1) && ((n == 1) || ((n % 100) == 0))) {
         printf("n = %d / %d\n", n, IMAGE_HEIGHT);
@@ -308,66 +332,132 @@ static bool generate_heatmaps(void)
   double *E_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *E_values);
   if (E_values == NULL) {
     perror("Error in malloc of E_values\n");
+    free(C_values);
     return false;
   }
 
   double *L_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *L_values);
   if (L_values == NULL) {
     perror("Error in malloc of L_values\n");
+    free(C_values);
+    free(E_values);
     return false;
   }
 
   double *W_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *W_values);
   if (W_values == NULL) {
     perror("Error in malloc of W_values\n");
+    free(C_values);
+    free(E_values);
+    free(L_values);
     return false;
   }
 
   double *A0_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *A0_values);
   if (A0_values == NULL) {
     perror("Error in malloc of A0_values\n");
+    free(C_values);
+    free(E_values);
+    free(L_values);
+    free(W_values);
     return false;
   }
 
   double *A1_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *A1_values);
   if (A1_values == NULL) {
     perror("Error in malloc of A1_values\n");
+    free(C_values);
+    free(E_values);
+    free(L_values);
+    free(W_values);
+    free(A0_values);
     return false;
   }
 
   double *K0_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *K0_values);
   if (K0_values == NULL) {
     perror("Error in malloc of K0_values\n");
+    free(C_values);
+    free(E_values);
+    free(L_values);
+    free(W_values);
+    free(A0_values);
+    free(A1_values);
     return false;
   }
 
   double *K1_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *K1_values);
   if (K1_values == NULL) {
     perror("Error in malloc of K1_values\n");
+    free(C_values);
+    free(E_values);
+    free(L_values);
+    free(W_values);
+    free(A0_values);
+    free(A1_values);
+    free(K0_values);
     return false;
   }
 
   double *K2_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *K2_values);
   if (K2_values == NULL) {
     perror("Error in malloc of K2_values\n");
+    free(C_values);
+    free(E_values);
+    free(L_values);
+    free(W_values);
+    free(A0_values);
+    free(A1_values);
+    free(K0_values);
+    free(K1_values);
     return false;
   }
 
   double *H0_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *H0_values);
   if (H0_values == NULL) {
     perror("Error in malloc of H0_values\n");
+    free(C_values);
+    free(E_values);
+    free(L_values);
+    free(W_values);
+    free(A0_values);
+    free(A1_values);
+    free(K0_values);
+    free(K1_values);
+    free(K2_values);
     return false;
   }
 
   double *H1_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *H1_values);
   if (H1_values == NULL) {
     perror("Error in malloc of H1_values\n");
+    free(C_values);
+    free(E_values);
+    free(L_values);
+    free(W_values);
+    free(A0_values);
+    free(A1_values);
+    free(K0_values);
+    free(K1_values);
+    free(K2_values);
+    free(H0_values);
     return false;
   }
 
   double *H2_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *H2_values);
   if (H2_values == NULL) {
     perror("Error in malloc of H2_values\n");
+    free(C_values);
+    free(E_values);
+    free(L_values);
+    free(W_values);
+    free(A0_values);
+    free(A1_values);
+    free(K0_values);
+    free(K1_values);
+    free(K2_values);
+    free(H0_values);
+    free(H1_values);
     return false;
   }
 
