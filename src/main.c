@@ -36,7 +36,8 @@ static inline double C(double x, double y)
 /* Calculates E(x,y) */
 static inline double E(double x, double y)
 {
-  const double res = 1.0 - exp(-exp(0 + (-100.0 * pow((3.0 * y + 0.75 * x + 0.27), 4)) + (-100.0 * pow(fabs(7 * (1.0 + 1.0 / (sqrt(fabs(100.0 * y + 25.0 * x - 6.0)) + 0.3)) * (x - y * 0.25)), (3.0 * y + 0.75 * x + 2.27))) + 10.0)) * (1.0 - exp_minus_exp_minus_exp((200.0 * fabs(y + x * 0.25 - 0.2 + 3 * (x - y * 0.25) * (x - y * 0.25)) - 32.0), (500.0 * fabs(y + x * 0.25 - (1.0 / 20.0) - (0.7 * sqrt(fabs(x - y * 0.25)))) - 2.5)));
+  const double res = 1.0 - exp(-exp((-100.0 * pow((3.0 * y + 0.75 * x + 0.27), 4)) + (-100.0 * pow(fabs(7 * (1.0 + 1.0 / (sqrt(fabs(100.0 * y + 25.0 * x - 6.0)) + 0.3)) * (x - y * 0.25)), (3.0 * y + 0.75 * x + 2.27))) + 10.0)) //
+                               * (1.0 - exp_minus_exp_minus_exp((200.0 * fabs(y + x * 0.25 - 0.2 + 3 * (x - y * 0.25) * (x - y * 0.25)) - 32.0), (500.0 * fabs(y + x * 0.25 - (1.0 / 20.0) - (0.7 * sqrt(fabs(x - y * 0.25)))) - 2.5)));
   return res;
 }
 
@@ -45,11 +46,12 @@ static inline double L(double x, double y)
 {
   double res = 0.0;
   for (uint8_t s = 1; s <= 25; s++) {
-    double tmp1 = (80.0 + 30.0 * sin(s * s));
-    double tmp2 = (100.0 * y + 25.0 * x - 4.0 * sin(s));
-    double tmp3 = (100.0 * x - 25.0 * y - 3.0 * atan(100.0 * x - 25.0 * y));
-    double tmp4 = tmp1 * atan(tmp2 / (1.0 + fabs(tmp3))) + fabs((x * 0.5) - (y / 8.0)) + (4.0 * sin(5.0 * s));
-    res += pow(sin(tmp4), 6);
+    double tmp = (80.0 + 30.0 * sin(s * s))                                                          //
+                     * atan((100.0 * y + 25.0 * x - 4.0 * sin(s))                                    //
+                            / (1.0 + fabs(100.0 * x - 25.0 * y - 3.0 * atan(100.0 * x - 25.0 * y)))) //
+                 + fabs((x * 0.5) - (y / 8.0))                                                       //
+                 + (4.0 * sin(5.0 * s));
+    res += pow(sin(tmp), 6);
   }
   return res;
 }
@@ -57,15 +59,17 @@ static inline double L(double x, double y)
 /* Calculates W(x,y) knowing C(x,y) */
 static inline double W(double x, double y, double Cxy)
 {
-  const double omega1 = 0.0 + (-40 * Cxy) + (196.0 / 5.0) + ((4.0 / 5.0) * (sqrt(0 + ((x - (y * 0.25)) * (x - (y * 0.25))) + ((y + (x * 0.25)) * (y + (x * 0.25))))));
+  const double omega1 = (-40 * Cxy) + (196.0 / 5.0) + ((4.0 / 5.0) * (sqrt(0 + ((x - (y * 0.25)) * (x - (y * 0.25))) + ((y + (x * 0.25)) * (y + (x * 0.25))))));
   const double omega2 = -(40.0 * (0 + (5.0 * fabs(y + (x * 0.25) - (3.0 / 50.0) + ((1.0 / 3.0) * (x - (y * 0.25)) * (x - (y * 0.25))))) + pow(fabs((2.0 * x) - (y * 0.5)), 3) - (2.0 / 5.0)));
   const double omega3 = -1000 * fabs(x - (y * 0.25)) + 100.0 - 90.0 * atan(8.0 * y + 2.0 * x + (8.0 / 5.0));
   const double omega4 = 1000 * (0.0 + fabs(x - y * 0.25) - (7.0 / 50.0) + (9.0 * (y + (x * 0.25) + 0.2) * (1.0 / 20.0)));
-  // const double omega5 = 70 * fabs((5 * (fabs(y + x * 0.25 - (3.0 / 50.0) + ((1.0 / 3.0) * (x - (y * 0.25)) * (x - (y * 0.25)))))) + (pow(fabs((2.0 * x) - (y * 0.5)), 3)) - (2.0 / 5.0)) - (1.0 / 200.0);
   const double omega5 = 70 * (fabs((5 * (fabs(y + x * 0.25 - (3.0 / 50.0) + ((1.0 / 3.0) * (x - (y * 0.25)) * (x - (y * 0.25)))))) + (pow(fabs((2.0 * x) - (y * 0.5)), 3)) - (2.0 / 5.0)) - (1.0 / 200.0));
-  // const double omega6 = 700 * fabs(0.0 + fabs(x - y * 0.25) - 0.1 + (0.9 * atan(8.0 * (y + (x * 0.25) + 0.2)))) - (21.0 / 20.0);
   const double omega6 = 700 * fabs(0.0 + fabs(x - y * 0.25) - 0.1 + (0.09 * atan(8.0 * (y + (x * 0.25) + 0.2)))) - (21.0 / 20.0);
-  const double res = (-exp_minus_exp_minus_exp(omega1, omega2)) * (1.0 - exp_minus_exp_minus_exp(omega3, omega4)) - exp_minus_exp(omega5) - exp_minus_exp(omega6) + 1.0;
+  const double res = (-exp_minus_exp_minus_exp(omega1, omega2)) //
+                         * (1.0 - exp_minus_exp_minus_exp(omega3, omega4)) -
+                     exp_minus_exp(omega5)   //
+                     - exp_minus_exp(omega6) //
+                     + 1.0;
   return res;
 }
 
@@ -95,19 +99,19 @@ static inline void K(double *Kxy, double x, double y)
 /* Calculates H(v,x,y) knowing E(x,y), L(x,y), W(x,y), A(v,x,y), K(v,x,y) */
 static inline void H(double *Hxy, double x, double y, double Exy, double Lxy, double Wxy, const double *Axy, const double *Kxy)
 {
-  // const double H_part1 = Axy[0] * Axy[1] * (1.0 - Exy) * (1.0 + Lxy * (1.0 / 50.0)) * exp_minus_exp(0 + exp((2.0 * y) + (0.5 * x) + (2.0 / 5.0) - (2.0 * fabs(x - (y * 0.25)))) + exp((8.0 * y) + (2.0 * x) + (2.0 / 5.0) - fabs((8.0 * x) - (2.0 * y)))) * Wxy;
-  const double H_part1 = Axy[0] * Axy[1] * (1.0 - Exy) * (1.0 + Lxy * (1.0 / 50.0)) * exp_minus_exp_minus_exp((2.0 * y) + (0.5 * x) + (2.0 / 5.0) - (2.0 * fabs(x - (y * 0.25))), (8.0 * y) + (2.0 * x) + (2.0 / 5.0) - fabs((8.0 * x) - (2.0 * y))) * Wxy;
-  const double H_part2 = exp_minus_exp(-(50.0 *
-                                         ((pow(cos((2.0 * y) + (x * 0.5) + (7.0 / 5.0) - fabs((2.0 * x) - (y * 0.5))),
-                                               80) *
-                                           pow(sin((20.0 * y) + (5.0 * x) + fabs((20.0 * x) - (5.0 * y))),
-                                               2)) -
-                                          pow(0.0 + (2.7 * y) + ((27.0 * x) * (1.0 / 40.0)) + (81.0 / 250.0),
-                                              10) -
-                                          (49.0 / 50.0))));
   for (uint8_t v = 0; v <= 2; v++) {
     double Kvxy = Kxy[v];
-    Hxy[v] = 0.0 + (((18 - (9.0 * v) + (v * v)) * (1.0 / 20.0)) * (1.0 - Axy[0]) * (1.0 - Exy) * Kvxy) + ((2 + (3.0 * v)) * 0.2) * H_part1 + H_part2 + 0.1 * Exy * ((v - 1.0) * (v - 1));
+    Hxy[v] = (((18 - (9.0 * v) + (v * v)) * (1.0 / 20.0)) * (1.0 - Axy[0]) * (1.0 - Exy) * Kvxy)                                                                                                                                                                   //
+             + ((2 + (3.0 * v)) * 0.2) * Axy[0] * Axy[1] * (1.0 - Exy) * (1.0 + Lxy / 50.0) * exp_minus_exp_minus_exp((2.0 * y) + (0.5 * x) + (2.0 / 5.0) - (2.0 * fabs(x - (y * 0.25))), (8.0 * y) + (2.0 * x) + (2.0 / 5.0) - fabs((8.0 * x) - (2.0 * y))) * Wxy //
+             + exp_minus_exp(-(50.0 *
+                               ((pow(cos((2.0 * y) + (x * 0.5) + (7.0 / 5.0) - fabs((2.0 * x) - (y * 0.5))),
+                                     80) *
+                                 pow(sin((20.0 * y) + (5.0 * x) + fabs((20.0 * x) - (5.0 * y))),
+                                     2)) -
+                                pow((2.7 * y) + ((27.0 * x) / 40.0) + (81.0 / 250.0),
+                                    10) -
+                                (49.0 / 50.0)))) //
+             + 0.1 * Exy * ((v - 1.0) * (v - 1.0));
   }
 }
 
@@ -260,24 +264,10 @@ static bool generate_butterfly(double *duration)
       K(Kxy, x, y);
       H(Hxy, x, y, Exy, Lxy, Wxy, Axy, Kxy);
 
-      /* if ((n == 580) && (m == 1354)) { */
-      /*   printf("\n\nn = %d, m = %d\n", n, m); */
-      /*   printf("   Cxy = %f\n", Cxy); */
-      /*   printf("   Exy = %f\n", Exy); */
-      /*   printf("   Lxy = %f\n", Lxy); */
-      /* } */
-
       int idx = ((n - 1) * IMAGE_WIDTH + (m - 1)) * 3;
       rgb_array[idx + 0] = F(Hxy[0]);
       rgb_array[idx + 1] = F(Hxy[1]);
       rgb_array[idx + 2] = F(Hxy[2]);
-
-      /* if ((m == 1) && (n == 1)) { */
-      /*   printf("\n\nL00 = %f\n\n", Lxy); */
-      /* } */
-      /* if ((m == 1) && (n == 500)) { */
-      /*   printf("\n\nL500,0 = %f\n\n", Lxy); */
-      /* } */
 
       if ((m == 1) && ((n == 1) || ((n % 100) == 0))) {
         printf("n = %d / %d\n", n, IMAGE_HEIGHT);
