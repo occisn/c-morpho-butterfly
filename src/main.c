@@ -153,7 +153,7 @@ bool draw_heatmap_from_values(int height, int width, const double *value_array, 
     return false;
 
   // (1) Calculate min, max, and range
-  // We can now access elements using 2D syntax: value_array[row][col]
+
   double value_min = value_array[0];
   double value_max = value_array[0];
 
@@ -167,15 +167,7 @@ bool draw_heatmap_from_values(int height, int width, const double *value_array, 
     }
   }
 
-  /* if (strcmp(export_file, "pics/L-heatmap.jpg") == 0) { */
-  /*   printf("\n\nL: min = %f\nL: max = %f\n\n", value_min, value_max); */
-  /* } */
-
   double value_range = value_max - value_min;
-  /* if (value_range == 0.0) { */
-  /*   printf("\n\n===> STRANGE: VALUE_RANGE = 0.0 <===\n\n"); */
-  /*   value_range = 1.0; */
-  /* } */
 
   // (2) Calculate RGB values
   uint8_t *rgb_image = (uint8_t *)malloc(width * height * 3);
