@@ -497,78 +497,93 @@ static bool generate_heatmaps(void)
 
   printf("\n");
 
+  bool success = true;
+
   printf("Generate C heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, C_values, OUTPUT_DIR "/C-heatmap.jpg")) {
     fprintf(stderr, "Problem in draw_heatmap_from_values for C heatmap\n");
-    return false;
+    success = false;
+    goto cleanup;
   }
 
   printf("Generate E heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, E_values, OUTPUT_DIR "/E-heatmap.jpg")) {
     fprintf(stderr, "Problem in draw_heatmap_from_values for E heatmap\n");
-    return false;
+    success = false;
+    goto cleanup;
   }
 
   printf("Generate L heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, L_values, OUTPUT_DIR "/L-heatmap.jpg")) {
     fprintf(stderr, "Problem in draw_heatmap_from_values for L heatmap\n");
-    return false;
+    success = false;
+    goto cleanup;
   }
 
   printf("Generate W heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, W_values, OUTPUT_DIR "/W-heatmap.jpg")) {
     fprintf(stderr, "Problem in draw_heatmap_from_values for W heatmap\n");
-    return false;
+    success = false;
+    goto cleanup;
   }
 
   printf("Generate A0 heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, A0_values, OUTPUT_DIR "/A0-heatmap.jpg")) {
     fprintf(stderr, "Problem in draw_heatmap_from_values for A0 heatmap\n");
-    return false;
+    success = false;
+    goto cleanup;
   }
 
   printf("Generate A1 heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, A1_values, OUTPUT_DIR "/A1-heatmap.jpg")) {
     fprintf(stderr, "Problem in draw_heatmap_from_values for A1 heatmap\n");
-    return false;
+    success = false;
+    goto cleanup;
   }
 
   printf("Generate K0 heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, K0_values, OUTPUT_DIR "/K0-heatmap.jpg")) {
     fprintf(stderr, "Problem in draw_heatmap_from_values for K0 heatmap\n");
-    return false;
+    success = false;
+    goto cleanup;
   }
 
   printf("Generate K1 heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, K1_values, OUTPUT_DIR "/K1-heatmap.jpg")) {
     fprintf(stderr, "Problem in draw_heatmap_from_values for K1 heatmap\n");
-    return false;
+    success = false;
+    goto cleanup;
   }
 
   printf("Generate K2 heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, K2_values, OUTPUT_DIR "/K2-heatmap.jpg")) {
     fprintf(stderr, "Problem in draw_heatmap_from_values for K2 heatmap\n");
-    return false;
+    success = false;
+    goto cleanup;
   }
 
   printf("Generate H0 heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, H0_values, OUTPUT_DIR "/H0-heatmap.jpg")) {
     fprintf(stderr, "Problem in draw_heatmap_from_values for H0 heatmap\n");
-    return false;
+    success = false;
+    goto cleanup;
   }
 
   printf("Generate H1 heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, H1_values, OUTPUT_DIR "/H1-heatmap.jpg")) {
     fprintf(stderr, "Problem in draw_heatmap_from_values for H1 heatmap\n");
-    return false;
+    success = false;
+    goto cleanup;
   }
 
   printf("Generate H2 heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, H2_values, OUTPUT_DIR "/H2-heatmap.jpg")) {
     fprintf(stderr, "Problem in draw_heatmap_from_values for H2 heatmap\n");
-    return false;
+    success = false;
+    goto cleanup;
   }
 
+cleanup:
   // (4) Free memory allocated to heatmaps
 
   printf("\nFreeing memory allocated to heatmaps...\n");
@@ -585,7 +600,7 @@ static bool generate_heatmaps(void)
   free(H1_values);
   free(H2_values);
 
-  return true;
+  return success;
 }
 
 static bool run_butterfly(void)
