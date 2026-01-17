@@ -125,7 +125,7 @@ static inline double F(double z)
 /**
  * Helper to convert Hue to RGB component
  */
-static double hue_to_rgb(double p, double q, double t)
+static inline double hue_to_rgb(double p, double q, double t)
 {
   if (t < 0.0)
     t += 1.0;
@@ -147,7 +147,7 @@ static double hue_to_rgb(double p, double q, double t)
  * @param value_array   A pointer to a array of height x width
  * @param export_file   Filename string
  */
-bool draw_heatmap_from_values(int height, int width, const double *value_array, const char *export_file)
+static bool draw_heatmap_from_values(int height, int width, const double *value_array, const char *export_file)
 {
   if (height <= 0 || width <= 0 || !value_array)
     return false;
@@ -588,7 +588,7 @@ static bool generate_heatmaps(void)
   return true;
 }
 
-bool run_butterfly(void)
+static bool run_butterfly(void)
 {
   const int NB_RUNS = 1;
   double durations[NB_RUNS];
