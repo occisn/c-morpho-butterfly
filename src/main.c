@@ -199,7 +199,7 @@ bool draw_heatmap_from_values(int height, int width, const double *value_array, 
   const int quality = 90;
   const int channels = 3;
   if (stbi_write_jpg(export_file, width, height, channels, rgb_image, quality) == 0) {
-    perror("Problem in stbi_write_jpg\n");
+    fprintf(stderr, "Problem in stbi_write_jpg\n");
     free(rgb_image);
     return false;
   }
@@ -221,7 +221,7 @@ static bool generate_butterfly(double *duration)
 
   uint8_t *rgb_array = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * 3);
   if (rgb_array == NULL) {
-    perror("Problem in malloc of rgb_array\n");
+    fprintf(stderr, "Problem in malloc of rgb_array\n");
     return false;
   }
 
@@ -280,7 +280,7 @@ static bool generate_butterfly(double *duration)
                      channels,
                      rgb_array,
                      quality) == 0) {
-    perror("Problem in stbi_write_jpg\n");
+    fprintf(stderr, "Problem in stbi_write_jpg\n");
     free(rgb_array);
     return false;
   }
@@ -307,20 +307,20 @@ static bool generate_heatmaps(void)
 
   double *C_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *C_values);
   if (C_values == NULL) {
-    perror("Error in malloc of C_values\n");
+    fprintf(stderr, "Error in malloc of C_values\n");
     return false;
   }
 
   double *E_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *E_values);
   if (E_values == NULL) {
-    perror("Error in malloc of E_values\n");
+    fprintf(stderr, "Error in malloc of E_values\n");
     free(C_values);
     return false;
   }
 
   double *L_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *L_values);
   if (L_values == NULL) {
-    perror("Error in malloc of L_values\n");
+    fprintf(stderr, "Error in malloc of L_values\n");
     free(C_values);
     free(E_values);
     return false;
@@ -328,7 +328,7 @@ static bool generate_heatmaps(void)
 
   double *W_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *W_values);
   if (W_values == NULL) {
-    perror("Error in malloc of W_values\n");
+    fprintf(stderr, "Error in malloc of W_values\n");
     free(C_values);
     free(E_values);
     free(L_values);
@@ -337,7 +337,7 @@ static bool generate_heatmaps(void)
 
   double *A0_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *A0_values);
   if (A0_values == NULL) {
-    perror("Error in malloc of A0_values\n");
+    fprintf(stderr, "Error in malloc of A0_values\n");
     free(C_values);
     free(E_values);
     free(L_values);
@@ -347,7 +347,7 @@ static bool generate_heatmaps(void)
 
   double *A1_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *A1_values);
   if (A1_values == NULL) {
-    perror("Error in malloc of A1_values\n");
+    fprintf(stderr, "Error in malloc of A1_values\n");
     free(C_values);
     free(E_values);
     free(L_values);
@@ -358,7 +358,7 @@ static bool generate_heatmaps(void)
 
   double *K0_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *K0_values);
   if (K0_values == NULL) {
-    perror("Error in malloc of K0_values\n");
+    fprintf(stderr, "Error in malloc of K0_values\n");
     free(C_values);
     free(E_values);
     free(L_values);
@@ -370,7 +370,7 @@ static bool generate_heatmaps(void)
 
   double *K1_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *K1_values);
   if (K1_values == NULL) {
-    perror("Error in malloc of K1_values\n");
+    fprintf(stderr, "Error in malloc of K1_values\n");
     free(C_values);
     free(E_values);
     free(L_values);
@@ -383,7 +383,7 @@ static bool generate_heatmaps(void)
 
   double *K2_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *K2_values);
   if (K2_values == NULL) {
-    perror("Error in malloc of K2_values\n");
+    fprintf(stderr, "Error in malloc of K2_values\n");
     free(C_values);
     free(E_values);
     free(L_values);
@@ -397,7 +397,7 @@ static bool generate_heatmaps(void)
 
   double *H0_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *H0_values);
   if (H0_values == NULL) {
-    perror("Error in malloc of H0_values\n");
+    fprintf(stderr, "Error in malloc of H0_values\n");
     free(C_values);
     free(E_values);
     free(L_values);
@@ -412,7 +412,7 @@ static bool generate_heatmaps(void)
 
   double *H1_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *H1_values);
   if (H1_values == NULL) {
-    perror("Error in malloc of H1_values\n");
+    fprintf(stderr, "Error in malloc of H1_values\n");
     free(C_values);
     free(E_values);
     free(L_values);
@@ -428,7 +428,7 @@ static bool generate_heatmaps(void)
 
   double *H2_values = malloc(IMAGE_HEIGHT * IMAGE_WIDTH * sizeof *H2_values);
   if (H2_values == NULL) {
-    perror("Error in malloc of H2_values\n");
+    fprintf(stderr, "Error in malloc of H2_values\n");
     free(C_values);
     free(E_values);
     free(L_values);
@@ -499,73 +499,73 @@ static bool generate_heatmaps(void)
 
   printf("Generate C heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, C_values, OUTPUT_DIR "/C-heatmap.jpg")) {
-    perror("Problem in draw_heatmap_from_values for C heatmap\n");
+    fprintf(stderr, "Problem in draw_heatmap_from_values for C heatmap\n");
     return false;
   }
 
   printf("Generate E heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, E_values, OUTPUT_DIR "/E-heatmap.jpg")) {
-    perror("Problem in draw_heatmap_from_values for E heatmap\n");
+    fprintf(stderr, "Problem in draw_heatmap_from_values for E heatmap\n");
     return false;
   }
 
   printf("Generate L heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, L_values, OUTPUT_DIR "/L-heatmap.jpg")) {
-    perror("Problem in draw_heatmap_from_values for L heatmap\n");
+    fprintf(stderr, "Problem in draw_heatmap_from_values for L heatmap\n");
     return false;
   }
 
   printf("Generate W heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, W_values, OUTPUT_DIR "/W-heatmap.jpg")) {
-    perror("Problem in draw_heatmap_from_values for W heatmap\n");
+    fprintf(stderr, "Problem in draw_heatmap_from_values for W heatmap\n");
     return false;
   }
 
   printf("Generate A0 heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, A0_values, OUTPUT_DIR "/A0-heatmap.jpg")) {
-    perror("Problem in draw_heatmap_from_values for A0 heatmap\n");
+    fprintf(stderr, "Problem in draw_heatmap_from_values for A0 heatmap\n");
     return false;
   }
 
   printf("Generate A1 heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, A1_values, OUTPUT_DIR "/A1-heatmap.jpg")) {
-    perror("Problem in draw_heatmap_from_values for A1 heatmap\n");
+    fprintf(stderr, "Problem in draw_heatmap_from_values for A1 heatmap\n");
     return false;
   }
 
   printf("Generate K0 heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, K0_values, OUTPUT_DIR "/K0-heatmap.jpg")) {
-    perror("Problem in draw_heatmap_from_values for K0 heatmap\n");
+    fprintf(stderr, "Problem in draw_heatmap_from_values for K0 heatmap\n");
     return false;
   }
 
   printf("Generate K1 heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, K1_values, OUTPUT_DIR "/K1-heatmap.jpg")) {
-    perror("Problem in draw_heatmap_from_values for K1 heatmap\n");
+    fprintf(stderr, "Problem in draw_heatmap_from_values for K1 heatmap\n");
     return false;
   }
 
   printf("Generate K2 heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, K2_values, OUTPUT_DIR "/K2-heatmap.jpg")) {
-    perror("Problem in draw_heatmap_from_values for K2 heatmap\n");
+    fprintf(stderr, "Problem in draw_heatmap_from_values for K2 heatmap\n");
     return false;
   }
 
   printf("Generate H0 heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, H0_values, OUTPUT_DIR "/H0-heatmap.jpg")) {
-    perror("Problem in draw_heatmap_from_values for H0 heatmap\n");
+    fprintf(stderr, "Problem in draw_heatmap_from_values for H0 heatmap\n");
     return false;
   }
 
   printf("Generate H1 heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, H1_values, OUTPUT_DIR "/H1-heatmap.jpg")) {
-    perror("Problem in draw_heatmap_from_values for H1 heatmap\n");
+    fprintf(stderr, "Problem in draw_heatmap_from_values for H1 heatmap\n");
     return false;
   }
 
   printf("Generate H2 heatmap...\n");
   if (!draw_heatmap_from_values(IMAGE_HEIGHT, IMAGE_WIDTH, H2_values, OUTPUT_DIR "/H2-heatmap.jpg")) {
-    perror("Problem in draw_heatmap_from_values for H2 heatmap\n");
+    fprintf(stderr, "Problem in draw_heatmap_from_values for H2 heatmap\n");
     return false;
   }
 
@@ -599,7 +599,7 @@ bool run_butterfly(void)
     printf("------\n");
     double duration0 = 0.0;
     if (!generate_butterfly(&duration0)) {
-      perror("Problem in generate_butterfly");
+      fprintf(stderr, "Problem in generate_butterfly");
       return false;
     }
     durations[i] = duration0;
@@ -628,7 +628,7 @@ int main(void)
 #else
     if (mkdir(OUTPUT_DIR, 0755) != 0) {
 #endif
-      perror("Failed to create output directory");
+      fprintf(stderr, "Failed to create output directory");
       return EXIT_FAILURE;
     }
     printf("Created output directory: %s\n", OUTPUT_DIR);
@@ -640,7 +640,7 @@ int main(void)
   printf("----------------------\n");
 
   if (!run_butterfly()) {
-    perror("Problem in generating butterfly\n");
+    fprintf(stderr, "Problem in generating butterfly\n");
     return EXIT_FAILURE;
   }
 
@@ -650,7 +650,7 @@ int main(void)
   printf("---------------------\n");
 
   if (!generate_heatmaps()) {
-    perror("Problem in generating heatmaps\n");
+    fprintf(stderr, "Problem in generating heatmaps\n");
     return EXIT_FAILURE;
   }
 
